@@ -17,7 +17,7 @@ if [[ -f $HOME/.zshConfig/prompt.zsh ]]; then
     source $HOME/.zshConfig/prompt.zsh
 fi
 ```
-### alias:
+### Alias:
 ``` bash
 prompt_font_enable
 prompt_font_disable
@@ -27,4 +27,7 @@ prompt_git_disable
 ---
 
 ### What is this font ?
-<a url=https://github.com/powerline/fonts>https://github.com/powerline/fonts</a>
+<a url="https://github.com/powerline/fonts">https://github.com/powerline/fonts</a>
+
+### What is this terminal ?
+<a url="https://github.com/zeit/hyper">https://github.com/zeit/hyper</a>
