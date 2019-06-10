@@ -23,10 +23,6 @@
 # SOFTWARE.
 #
 
-# init zsh
-stty -ixon
-autoload -U colors && colors
-
 # export default variable
 export PROMPT_FONT="true"
 export PROMPT_GIT="true"
@@ -77,7 +73,7 @@ function ___prompt() {
     local characterBranch=" "
     local characterLock=" X "
 
-    local colorReset="%{$reset_color%}"
+    local colorReset=$'%{\e[0m%}'
     local colorFG=$'%{\e[38;5;231m%}'
     local colorBeginDirFG=$'%{\e[38;5;166m%}'
     local colorBeginDirBG=$'%{\e[48;5;166m%}'
