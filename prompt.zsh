@@ -35,28 +35,28 @@ export PROMPT_GIT="true"
 # ║     ALIAS      ║ #
 # ╚════════════════╝ #
 
-alias prompt_git_enable='____prompt_git_enable'
-alias prompt_git_disable='____prompt_git_disable'
-alias prompt_font_enable='____prompt_font_enable'
-alias prompt_font_disable='____prompt_font_disable'
+alias prompt_git_enable='___prompt_git_enable'
+alias prompt_git_disable='___prompt_git_disable'
+alias prompt_font_enable='___prompt_font_enable'
+alias prompt_font_disable='___prompt_font_disable'
 
 # ╔════════════════╗ #
 # ║     TOOLS      ║ #
 # ╚════════════════╝ #
 
-function ____prompt_git_enable() {
+function ___prompt_git_enable() {
     export PROMPT_GIT="true"
 }
 
-function ____prompt_git_disable() {
+function ___prompt_git_disable() {
     export PROMPT_GIT="false"
 }
 
-function ____prompt_font_enable() {
+function ___prompt_font_enable() {
     export PROMPT_FONT="true"
 }
 
-function ____prompt_font_disable() {
+function ___prompt_font_disable() {
     export PROMPT_FONT="false"
 }
 
@@ -128,15 +128,15 @@ function ___prompt() {
             middleDir=`echo $PWD | sed "s/[/]*\(.*\)\?[/]${lastDir}/\1/"`
         fi
     fi
-    ___left_prompt "${characterHome}" "${middleDir}" "${lastDir}"
-    ___right_prompt
+    ___prompt_left "${characterHome}" "${middleDir}" "${lastDir}"
+    ___prompt_right
 }
 
 # ╔════════════════╗ #
 # ║  LEFT  PROMPT  ║ #
 # ╚════════════════╝ #
 
-function ___left_prompt() {
+function ___prompt_left() {
     # "[ ~ ]> ... > ... > X >"
     PROMPT+="${colorReset}${colorBeginDirBG}${colorFG} ${characterHome} "
 
@@ -191,7 +191,7 @@ function ___prompt_permition() {
 # ║  RIGHT PROMPT  ║ #
 # ╚════════════════╝ #
 
-function ___right_prompt() {
+function ___prompt_right() {
     RPROMPT="${colorReset}"
 
     local branch="$(___prompt_git_branch)"

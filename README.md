@@ -8,7 +8,7 @@
 
 ### How to install ?
 ``` bash
-mkdir -P $HOME/.zshConfig
+mkdir -p $HOME/.zshConfig
 cp prompt.zsh $HOME/.zshConfig
 ```
 ``` bash
