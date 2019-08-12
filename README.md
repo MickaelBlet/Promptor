@@ -12,7 +12,7 @@ mkdir -p $HOME/.zshConfig
 cp prompt.zsh $HOME/.zshConfig
 ```
 ``` bash
-# add this in your .zshrc
+# add this in your $HOME/.zshrc
 if [[ -f $HOME/.zshConfig/prompt.zsh ]]; then
     source $HOME/.zshConfig/prompt.zsh
 fi
