@@ -213,12 +213,11 @@ function ___prompt_right() {
 }
 
 function ___prompt_git_branch() {
-    local gittest
+    local gitBranch
     if [ -n $PROMPT_GIT ]; then
         if [[ $PROMPT_GIT == "true" ]]; then
-            if gittest=`git symbolic-ref -q HEAD` &> /dev/null; then
-                local branch=`basename $gittest`
-                echo "${branch}"
+            if gitBranch=`git symbolic-ref -q HEAD --short` &> /dev/null; then
+                echo "${gitBranch}"
             fi
         fi
     fi
