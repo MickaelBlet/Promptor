@@ -75,6 +75,7 @@ function ___prompt() {
 
     local colorReset=$'%{\e[0m%}'
     local colorFG=$'%{\e[38;5;231m%}'
+    local colorFGReverse=$'%{\e[38;5;232m%}'
     local colorBeginDirFG=$'%{\e[38;5;166m%}'
     local colorBeginDirBG=$'%{\e[48;5;166m%}'
     local colorMiddleDirFG=$'%{\e[38;5;237m%}'
@@ -85,6 +86,8 @@ function ___prompt() {
     local colorLockBG=$'%{\e[48;5;124m%}'
     local colorGitCommitFG=$'%{\e[38;5;164m%}'
     local colorGitCommitBG=$'%{\e[48;5;164m%}'
+    local colorGitRemoteFG=$'%{\e[38;5;106m%}'
+    local colorGitRemoteBG=$'%{\e[48;5;106m%}'
     local colorGitFG=$'%{\e[38;5;240m%}'
     local colorGitBG=$'%{\e[48;5;240m%}'
     local colorTimeFG=$'%{\e[38;5;237m%}'
@@ -195,14 +198,19 @@ function ___prompt_right() {
     if [[ -n ${branch} ]]; then
         local colorGitFG="${colorGitFG}"
         local colorGitBG="${colorGitBG}"
+        local colorGitText="${colorFG}"
         if [[ -n $(___prompt_git_status) ]]; then
             colorGitFG="${colorGitCommitFG}"
             colorGitBG="${colorGitCommitBG}"
+        elif [[ -n $(___prompt_git_remote) ]]; then
+            colorGitFG="${colorGitRemoteFG}"
+            colorGitBG="${colorGitRemoteBG}"
+            colorGitText="${colorFGReverse}"
         fi
         # " [<] ... < ... "
         RPROMPT+="${colorGitFG}${characterLeftFillArrow}"
         # " < [...] < ... "
-        RPROMPT+="${colorGitBG}${colorFG} ${branch}${characterBranch}"
+        RPROMPT+="${colorGitBG}${colorGitText} ${branch}${characterBranch}"
     fi
 
     # " < ... [<] ... "
@@ -230,6 +238,20 @@ function ___prompt_git_status() {
             if gittest=`git status --ignore-submodules` &> /dev/null; then
                 local testgit="nothing to commit"
                 if [[ "$gittest" != *$testgit* ]]; then
+                    echo "${gittest}"
+                fi
+            fi
+        fi
+    fi
+}
+
+function ___prompt_git_remote() {
+    local gittest
+    if [ -n $PROMPT_GIT ]; then
+        if [[ $PROMPT_GIT == "true" ]]; then
+            if gittest=`git status --ignore-submodules` &> /dev/null; then
+                local testgit="up to date"
+                if [[ "$gittest" == *$testgit* ]]; then
                     echo "${gittest}"
                 fi
             fi
