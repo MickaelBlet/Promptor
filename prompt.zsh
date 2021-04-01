@@ -23,111 +23,80 @@
 # SOFTWARE.
 #
 
-# export default variable
-export PROMPT_FONT="true"
-export PROMPT_GIT="true"
-
 # ╔════════════════╗ #
 # ║     ALIAS      ║ #
 # ╚════════════════╝ #
 
-alias prompt_git_enable='___prompt_git_enable'
-alias prompt_git_disable='___prompt_git_disable'
-alias prompt_font_enable='___prompt_font_enable'
-alias prompt_font_disable='___prompt_font_disable'
-
-# ╔════════════════╗ #
-# ║     TOOLS      ║ #
-# ╚════════════════╝ #
-
-function ___prompt_git_enable() {
-    export PROMPT_GIT="true"
-}
-
-function ___prompt_git_disable() {
-    export PROMPT_GIT="false"
-}
-
-function ___prompt_font_enable() {
-    export PROMPT_FONT="true"
-}
-
-function ___prompt_font_disable() {
-    export PROMPT_FONT="false"
-}
+alias prompt_git_enable='touch "$HOME/.prompt_git"'
+alias prompt_git_disable='rm -f "$HOME/.prompt_git"'
+alias prompt_font_enable='touch "$HOME/.powerline_font"'
+alias prompt_font_disable='rm -f "$HOME/.powerline_font"'
 
 # ╔════════════════╗ #
 # ║     PROMPT     ║ #
 # ╚════════════════╝ #
 
+# powerline unicode
+___unicode_Branch="$(echo -e "\ue0a0")"
+___unicode_Lock="$(echo -e "\ue0a2")"
+___unicode_RightFillArrow="$(echo -e "\ue0b0")"
+___unicode_RightArrow="$(echo -e "\ue0b1")"
+___unicode_LeftFillArrow="$(echo -e "\ue0b2")"
+___unicode_LeftArrow="$(echo -e "\ue0b3")"
+
 # pre command event
+function preexec() {
+    # refresh title bar with current command
+    printf "\e]0;%s\a" "$1"
+}
+
 function precmd() {
     ___prompt
 }
 
 function ___prompt() {
     # local variables list
-    local characterLeftFillArrow=""
-    local characterRightFillArrow=""
-    local characterRightArrow=" | "
     local characterBranch=" "
     local characterLock=" X "
+    local characterRightFillArrow=""
+    local characterRightArrow=" | "
+    local characterLeftFillArrow=""
+    local characterLeftArrow=" | "
+
+    # font character
+    if [ -f $HOME/.powerline_font ]; then
+        characterBranch=" $___unicode_Branch "
+        characterLock=" $___unicode_Lock "
+        characterRightFillArrow="$___unicode_RightFillArrow"
+        characterRightArrow=" $___unicode_RightArrow "
+        characterLeftFillArrow="$___unicode_LeftFillArrow"
+        characterLeftArrow=" $___unicode_LeftArrow "
+    fi
 
     local colorReset=$'%{\e[0m%}'
     local colorFG=$'%{\e[38;5;231m%}'
     local colorFGReverse=$'%{\e[38;5;232m%}'
-    local colorBeginDirFG=$'%{\e[38;5;166m%}'
-    local colorBeginDirBG=$'%{\e[48;5;166m%}'
-    local colorMiddleDirFG=$'%{\e[38;5;237m%}'
-    local colorMiddleDirBG=$'%{\e[48;5;237m%}'
-    local colorLastDirFG=$'%{\e[38;5;25m%}'
-    local colorLastDirBG=$'%{\e[48;5;25m%}'
+    local colorHostFG=$'%{\e[38;5;25m%}'
+    local colorHostBG=$'%{\e[48;5;25m%}'
+    local colorDirFG=$'%{\e[38;5;237m%}'
+    local colorDirBG=$'%{\e[48;5;237m%}'
     local colorLockFG=$'%{\e[38;5;124m%}'
     local colorLockBG=$'%{\e[48;5;124m%}'
-    local colorGitCommitFG=$'%{\e[38;5;164m%}'
-    local colorGitCommitBG=$'%{\e[48;5;164m%}'
-    local colorGitRemoteFG=$'%{\e[38;5;106m%}'
-    local colorGitRemoteBG=$'%{\e[48;5;106m%}'
-    local colorGitFG=$'%{\e[38;5;240m%}'
-    local colorGitBG=$'%{\e[48;5;240m%}'
+    local colorGitCommitFG=$'%{\e[38;5;226m%}'
+    local colorGitCommitBG=$'%{\e[48;5;226m%}'
+    local colorGitRemoteFG=$'%{\e[38;5;118m%}'
+    local colorGitRemoteBG=$'%{\e[48;5;118m%}'
+    local colorGitFG=$'%{\e[38;5;237m%}'
+    local colorGitBG=$'%{\e[48;5;237m%}'
     local colorTimeFG=$'%{\e[38;5;237m%}'
     local colorTimeBG=$'%{\e[48;5;237m%}'
 
     local titlebar=$'%{\e]0;%~\a%}'
 
-    # font character
-    if [[ $PROMPT_FONT == "true" ]]; then
-        characterLeftFillArrow=""
-        characterRightFillArrow=""
-        characterRightArrow="  "
-        characterBranch="  "
-        characterLock="  "
-    fi
-
     # set title bar
     PROMPT="${titlebar}"
 
-    local characterHome=""
-    local lastDir="$(basename ${PWD})"
-    local middleDir=""
-
-    # check if in home
-    if [[ $PWD == $HOME* ]]; then
-        characterHome="~"
-        middleDir=`echo $PWD | sed "s/^${HOME//\//\\/}//" | sed "s/[/]*\(.*\)\?[/]${lastDir}/\1/"`
-        if [[ $PWD == $HOME ]]; then
-            middleDir=""
-            lastDir=""
-        fi
-    else
-        characterHome="@"
-        if [[ $PWD == "/" ]]; then
-            lastDir=""
-        else
-            middleDir=`echo $PWD | sed "s/[/]*\(.*\)\?[/]${lastDir}/\1/"`
-        fi
-    fi
-    ___prompt_left "${characterHome}" "${middleDir}" "${lastDir}"
+    ___prompt_left
     ___prompt_right
 }
 
@@ -136,54 +105,23 @@ function ___prompt() {
 # ╚════════════════╝ #
 
 function ___prompt_left() {
-    # "[ ~ ]> ... > ... > X >"
-    PROMPT+="${colorReset}${colorBeginDirBG}${colorFG} ${characterHome} "
-
-    if [[ -n $middleDir ]]; then
-        local middleDirDecorate
-        if [ `echo ${middleDir} | wc -c` -gt '24' ]; then
-            middleDirDecorate=`echo ".../$(basename ${middleDir})" | sed "s/\//${characterRightArrow}/g"`
-        else
-            middleDirDecorate=`echo ${middleDir} | sed "s/\//${characterRightArrow}/g"`
-        fi
-        # " ~ [>] ... > ... > X >"
-        PROMPT+="${colorReset}${colorMiddleDirBG}${colorBeginDirFG}${characterRightFillArrow}"
-        # " ~ > [...] > ... > X >"
-        PROMPT+="${colorReset}${colorMiddleDirBG}${colorFG} ${middleDirDecorate} "
-        # " ~ > ... [>] ... > X >"
-        PROMPT+="${colorReset}${colorLastDirBG}${colorMiddleDirFG}${characterRightFillArrow}"
-        # " ~ > ... > [...] > X >"
-        PROMPT+="${colorReset}${colorLastDirBG}${colorFG} ${lastDir} "
-        # " ~ > ... > ... [> X >]"
-        PROMPT+="${colorReset}${colorLastDirFG}$(___prompt_permition) "
-        PROMPT+="${colorReset}"
-    else
-        if [[ -n $lastDir ]]; then
-            # " ~ [>] ... > X >"
-            PROMPT+="${colorReset}${colorLastDirBG}${colorBeginDirFG}${characterRightFillArrow}"
-            # " ~ > [...] > X >"
-            PROMPT+="${colorReset}${colorLastDirBG}${colorFG} ${lastDir} "
-            # " ~ > ... [> X >]"
-            PROMPT+="${colorReset}${colorLastDirFG}$(___prompt_permition) "
-            PROMPT+="${colorReset}"
-        else
-            # " ~ [> X >]"
-            PROMPT+="${colorReset}${colorBeginDirFG}$(___prompt_permition) "
-            PROMPT+="${colorReset}"
-        fi
-    fi
+    # " [...] > X >"
+    PROMPT+="${colorReset}${colorDirBG}${colorFG} %~ "
+    # " ... [> X >]"
+    PROMPT+="${colorReset}${colorDirFG}$(___prompt_permission)"
+    PROMPT+="${colorReset} "
 }
 
-function ___prompt_permition() {
-    local permition=""
+function ___prompt_permission() {
+    local permission=""
     if [ ! -w $PWD ]; then
-        # " ~ > ... > ... [> X] >"
-        permition+="${colorLockBG}${characterRightFillArrow}${colorFG}${characterLock}"
-        permition+="${colorReset}${colorLockFG}"
+        # " ... [> X] >"
+        permission+="${colorLockBG}${characterRightFillArrow}${colorFG}${characterLock}"
+        permission+="${colorReset}${colorLockFG}"
     fi
-    # " ~ > ... > ... > X [>]"
-    permition+="${characterRightFillArrow}"
-    echo $permition
+    # " ... > X [>]"
+    permission+="${characterRightFillArrow}"
+    echo $permission
 }
 
 # ╔════════════════╗ #
@@ -193,25 +131,33 @@ function ___prompt_permition() {
 function ___prompt_right() {
     RPROMPT="${colorReset}"
 
-    local branch="$(___prompt_git_branch)"
+    if [ -f $HOME/.prompt_git ]; then
+        local branch="$(___prompt_git_branch)"
 
-    if [[ -n ${branch} ]]; then
-        local colorGitFG="${colorGitFG}"
-        local colorGitBG="${colorGitBG}"
-        local colorGitText="${colorFG}"
-        if [[ -n $(___prompt_git_status) ]]; then
-            colorGitFG="${colorGitCommitFG}"
-            colorGitBG="${colorGitCommitBG}"
-        elif [[ -n $(___prompt_git_remote) ]]; then
-            colorGitFG="${colorGitRemoteFG}"
-            colorGitBG="${colorGitRemoteBG}"
-            colorGitText="${colorFGReverse}"
+        if [[ -n ${branch} ]]; then
+            local gitStatus="$(timeout 5 git status --ignore-submodules)"
+
+            local colorGitFG="${colorGitFG}"
+            local colorGitBG="${colorGitBG}"
+            local colorGitText="${colorFG}"
+            if [[ "$gitStatus" != *"nothing to commit"* ]]; then
+                colorGitFG="${colorGitCommitFG}"
+                colorGitBG="${colorGitCommitBG}"
+                colorGitText="${colorFGReverse}"
+            elif [[ "$gitStatus" == *"up to date"* ]]; then
+                colorGitFG="${colorGitRemoteFG}"
+                colorGitBG="${colorGitRemoteBG}"
+                colorGitText="${colorFGReverse}"
+            fi
+            # " [<] ... < ... "
+            RPROMPT+="${colorGitFG}${characterLeftFillArrow}"
+            # " < [...] < ... "
+            RPROMPT+="${colorGitBG}${colorGitText} ${branch}${characterBranch}"
         fi
-        # " [<] ... < ... "
-        RPROMPT+="${colorGitFG}${characterLeftFillArrow}"
-        # " < [...] < ... "
-        RPROMPT+="${colorGitBG}${colorGitText} ${branch}${characterBranch}"
     fi
+
+    RPROMPT+="${colorHostFG}${characterLeftFillArrow}"
+    RPROMPT+="${colorHostBG}${colorFG} %n@%m "
 
     # " < ... [<] ... "
     RPROMPT+="${colorTimeFG}${characterLeftFillArrow}"
@@ -221,27 +167,12 @@ function ___prompt_right() {
 }
 
 function ___prompt_git_branch() {
-    local gitBranch
-    if [ -n $PROMPT_GIT ]; then
-        if [[ $PROMPT_GIT == "true" ]]; then
-            if gitBranch=`git symbolic-ref -q HEAD --short` &> /dev/null; then
-                echo "${gitBranch}"
-            fi
-        fi
-    fi
-}
-
-function ___prompt_git_status() {
     local gittest
-    if [ -n $PROMPT_GIT ]; then
-        if [[ $PROMPT_GIT == "true" ]]; then
-            if gittest=`git status --ignore-submodules` &> /dev/null; then
-                local testgit="nothing to commit"
-                if [[ "$gittest" != *$testgit* ]]; then
-                    echo "${gittest}"
-                fi
-            fi
-        fi
+    if gittest=$(timeout 5 git symbolic-ref -q HEAD) &> /dev/null; then
+        local branch="$(basename $gittest)"
+        echo "${branch}"
+    elif gittest=$(timeout 5 git rev-parse --short HEAD) &> /dev/null; then
+        echo "${gittest}"
     fi
 }
 

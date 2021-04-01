@@ -4,8 +4,6 @@
   <img src="./prompt.png" >
 </p>
 
----
-
 ### How to install ?
 ``` bash
 mkdir -p $HOME/.zshConfig
@@ -28,6 +26,3 @@ prompt_git_disable
 
 ### What is this font ?
 <a url="https://github.com/powerline/fonts">https://github.com/powerline/fonts</a>
-
-### What is this terminal ?
-<a url="https://github.com/zeit/hyper">https://github.com/zeit/hyper</a>
