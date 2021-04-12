@@ -175,17 +175,3 @@ function ___prompt_git_branch() {
         echo "${gittest}"
     fi
 }
-
-function ___prompt_git_remote() {
-    local gittest
-    if [ -n $PROMPT_GIT ]; then
-        if [[ $PROMPT_GIT == "true" ]]; then
-            if gittest=`git status --ignore-submodules` &> /dev/null; then
-                local testgit="up to date"
-                if [[ "$gittest" == *$testgit* ]]; then
-                    echo "${gittest}"
-                fi
-            fi
-        fi
-    fi
-}
