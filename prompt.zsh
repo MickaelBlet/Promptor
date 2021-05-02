@@ -2,7 +2,7 @@
 # ZSH Prompt
 #
 # Licensed under the MIT License <http://opensource.org/licenses/MIT>.
-# Copyright (c) 2019 BLET Mickaël.
+# Copyright (c) 2021 BLET Mickaël.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,39 +23,25 @@
 # SOFTWARE.
 #
 
-# ╔════════════════╗ #
-# ║     ALIAS      ║ #
-# ╚════════════════╝ #
+# ------------------------------------------------------------------------------
+# ALIAS
 
 alias prompt_git_enable='touch "$HOME/.prompt_git"'
 alias prompt_git_disable='rm -f "$HOME/.prompt_git"'
 alias prompt_font_enable='touch "$HOME/.powerline_font"'
 alias prompt_font_disable='rm -f "$HOME/.powerline_font"'
 
-# ╔════════════════╗ #
-# ║     PROMPT     ║ #
-# ╚════════════════╝ #
+# ------------------------------------------------------------------------------
+# HOOK
 
-# powerline unicode
-___unicode_Branch="$(echo -e "\ue0a0")"
-___unicode_Lock="$(echo -e "\ue0a2")"
-___unicode_RightFillArrow="$(echo -e "\ue0b0")"
-___unicode_RightArrow="$(echo -e "\ue0b1")"
-___unicode_LeftFillArrow="$(echo -e "\ue0b2")"
-___unicode_LeftArrow="$(echo -e "\ue0b3")"
-
-# pre command event
+# pre exec command event
 function preexec() {
     # refresh title bar with current command
     printf "\e]0;%s\a" "$1"
 }
 
+# pre command event
 function precmd() {
-    ___prompt
-}
-
-function ___prompt() {
-    # local variables list
     local characterBranch=" "
     local characterLock=" X "
     local characterRightFillArrow=""
@@ -64,13 +50,13 @@ function ___prompt() {
     local characterLeftArrow=" | "
 
     # font character
-    if [ -f $HOME/.powerline_font ]; then
-        characterBranch=" $___unicode_Branch "
-        characterLock=" $___unicode_Lock "
-        characterRightFillArrow="$___unicode_RightFillArrow"
-        characterRightArrow=" $___unicode_RightArrow "
-        characterLeftFillArrow="$___unicode_LeftFillArrow"
-        characterLeftArrow=" $___unicode_LeftArrow "
+    if [ -f "$HOME/.powerline_font" ]; then
+        characterBranch=$' \ue0a0 '
+        characterLock=$' \ue0a2 '
+        characterRightFillArrow=$'\ue0b0'
+        characterRightArrow=$' \ue0b1 '
+        characterLeftFillArrow=$'\ue0b2'
+        characterLeftArrow=$' \ue0b3 '
     fi
 
     local colorReset=$'%{\e[0m%}'
@@ -93,61 +79,67 @@ function ___prompt() {
 
     local titlebar=$'%{\e]0;%~\a%}'
 
-    # set title bar
+    # --------------------------------------------------------------------------
+    # Title
     PROMPT="${titlebar}"
 
-    ___prompt_left
-    ___prompt_right
-}
+    # --------------------------------------------------------------------------
+    # Left prompt
 
-# ╔════════════════╗ #
-# ║  LEFT  PROMPT  ║ #
-# ╚════════════════╝ #
-
-function ___prompt_left() {
     # " [...] > X >"
-    PROMPT+="${colorReset}${colorDirBG}${colorFG} %~ "
-    # " ... [> X >]"
-    PROMPT+="${colorReset}${colorDirFG}$(___prompt_permission)"
-    PROMPT+="${colorReset} "
-}
-
-function ___prompt_permission() {
-    local permission=""
-    if [ ! -w $PWD ]; then
+    PROMPT+="${colorReset}${colorDirBG}${colorFG}"
+    PROMPT+=" %~ " # current path
+    PROMPT+="${colorReset}${colorDirFG}"
+    if [ ! -w $(pwd) ]; then
         # " ... [> X] >"
-        permission+="${colorLockBG}${characterRightFillArrow}${colorFG}${characterLock}"
-        permission+="${colorReset}${colorLockFG}"
+        PROMPT+="${colorLockBG}${characterRightFillArrow}${colorFG}"
+        PROMPT+="${characterLock}"
+        PROMPT+="${colorReset}${colorLockFG}"
     fi
     # " ... > X [>]"
-    permission+="${characterRightFillArrow}"
-    echo $permission
-}
+    PROMPT+="${characterRightFillArrow}"
+    PROMPT+="${colorReset} "
 
-# ╔════════════════╗ #
-# ║  RIGHT PROMPT  ║ #
-# ╚════════════════╝ #
+    # --------------------------------------------------------------------------
+    # Right prompt
 
-function ___prompt_right() {
     RPROMPT="${colorReset}"
-
-    if [ -f $HOME/.prompt_git ]; then
-        local branch="$(___prompt_git_branch)"
-
-        if [[ -n ${branch} ]]; then
-            local gitStatus="$(timeout 5 git status --ignore-submodules)"
-
+    # check git prompt file
+    if [ -f "$HOME/.prompt_git" ]; then
+        local branch=""
+        if branch=$(git symbolic-ref HEAD) &>/dev/null; then
+            branch="${branch##refs/heads/}"
+        else
+            branch=$(git rev-parse --short HEAD) &>/dev/null
+        fi
+        if [ ! -z ${branch} ]; then
             local colorGitFG="${colorGitFG}"
             local colorGitBG="${colorGitBG}"
             local colorGitText="${colorFG}"
-            if [[ "$gitStatus" != *"nothing to commit"* ]]; then
+            local count=""
+            if git ls-files --others --exclude-standard \
+                --directory --no-empty-directory \
+                --error-unmatch -- ':/*' &>/dev/null ||
+                ! git diff --no-ext-diff --quiet ||
+                ! git diff --no-ext-diff --cached --quiet
+            then
                 colorGitFG="${colorGitCommitFG}"
                 colorGitBG="${colorGitCommitBG}"
                 colorGitText="${colorFGReverse}"
-            elif [[ "$gitStatus" == *"up to date"* ]]; then
-                colorGitFG="${colorGitRemoteFG}"
-                colorGitBG="${colorGitRemoteBG}"
-                colorGitText="${colorFGReverse}"
+            elif count=$(git rev-list --count HEAD...origin/HEAD) &>/dev/null
+            then
+                if [ "$count" = "0" ]; then
+                    colorGitFG="${colorGitRemoteFG}"
+                    colorGitBG="${colorGitRemoteBG}"
+                    colorGitText="${colorFGReverse}"
+                fi
+            elif count=$(git rev-list --count HEAD...origin/$branch) &>/dev/null
+            then
+                if [ "$count" = "0" ]; then
+                    colorGitFG="${colorGitRemoteFG}"
+                    colorGitBG="${colorGitRemoteBG}"
+                    colorGitText="${colorFGReverse}"
+                fi
             fi
             # " [<] ... < ... "
             RPROMPT+="${colorGitFG}${characterLeftFillArrow}"
@@ -156,36 +148,15 @@ function ___prompt_right() {
         fi
     fi
 
+    # " [< ...] < ... "
     RPROMPT+="${colorHostFG}${characterLeftFillArrow}"
-    RPROMPT+="${colorHostBG}${colorFG} %n@%m "
+    RPROMPT+="${colorHostBG}${colorFG}"
+    RPROMPT+=" %n@%m " # user@hostname
 
     # " < ... [<] ... "
     RPROMPT+="${colorTimeFG}${characterLeftFillArrow}"
     # " < ... < [...] "
-    RPROMPT+="${colorReset}${colorTimeBG}${colorFG} %D{%H:%M} "
+    RPROMPT+="${colorReset}${colorTimeBG}${colorFG}"
+    RPROMPT+=" %D{%H:%M} " # current date
     RPROMPT+="${colorReset}"
-}
-
-function ___prompt_git_branch() {
-    local gittest
-    if gittest=$(timeout 5 git symbolic-ref -q HEAD) &> /dev/null; then
-        local branch="$(basename $gittest)"
-        echo "${branch}"
-    elif gittest=$(timeout 5 git rev-parse --short HEAD) &> /dev/null; then
-        echo "${gittest}"
-    fi
-}
-
-function ___prompt_git_remote() {
-    local gittest
-    if [ -n $PROMPT_GIT ]; then
-        if [[ $PROMPT_GIT == "true" ]]; then
-            if gittest=`git status --ignore-submodules` &> /dev/null; then
-                local testgit="up to date"
-                if [[ "$gittest" == *$testgit* ]]; then
-                    echo "${gittest}"
-                fi
-            fi
-        fi
-    fi
 }
