@@ -90,7 +90,7 @@ function precmd() {
     PROMPT+="${colorReset}${colorDirBG}${colorFG}"
     PROMPT+=" %~ " # current path
     PROMPT+="${colorReset}${colorDirFG}"
-    if [ ! -w $(pwd) ]; then
+    if [ ! -w "$(pwd)" ]; then
         # " ... [> X] >"
         PROMPT+="${colorLockBG}${characterRightFillArrow}${colorFG}"
         PROMPT+="${characterLock}"
@@ -112,7 +112,7 @@ function precmd() {
         else
             branch=$(git rev-parse --short HEAD) &>/dev/null
         fi
-        if [ ! -z ${branch} ]; then
+        if [ ! -z "${branch}" ]; then
             local colorGitFG="${colorGitFG}"
             local colorGitBG="${colorGitBG}"
             local colorGitText="${colorFG}"
