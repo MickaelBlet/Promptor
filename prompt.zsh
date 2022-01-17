@@ -2,7 +2,7 @@
 # ZSH Prompt
 #
 # Licensed under the MIT License <http://opensource.org/licenses/MIT>.
-# Copyright (c) 2021 BLET Mickaël.
+# Copyright (c) 2022 BLET Mickaël.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +23,21 @@
 # SOFTWARE.
 #
 
+PROMPT_SCRIPT_LIB=$("cd" -P -- "$("dirname" -- "$0")" && printf '%s\n' "$(pwd -P)/$("basename" -- "$0")")
+
 # ------------------------------------------------------------------------------
 # ALIAS
 
-alias prompt_git_enable='touch "$HOME/.prompt_git"'
-alias prompt_git_disable='rm -f "$HOME/.prompt_git"'
-alias prompt_font_enable='touch "$HOME/.powerline_font"'
-alias prompt_font_disable='rm -f "$HOME/.powerline_font"'
+alias prompt_font_enable='sed -i "s/\(PROMPT_OPTION_POWERLINE\)=.*/\1=true/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
+alias prompt_font_disable='sed -i "s/\(PROMPT_OPTION_POWERLINE\)=.*/\1=false/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
+alias prompt_git_enable='sed -i "s/\(PROMPT_OPTION_GIT\)=.*/\1=true/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
+alias prompt_git_disable='sed -i "s/\(PROMPT_OPTION_GIT\)=.*/\1=false/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
+
+# ------------------------------------------------------------------------------
+# OPTIONS
+
+PROMPT_OPTION_POWERLINE=true
+PROMPT_OPTION_GIT=true
 
 # ------------------------------------------------------------------------------
 # HOOK
@@ -37,7 +45,7 @@ alias prompt_font_disable='rm -f "$HOME/.powerline_font"'
 # pre exec command event
 function preexec() {
     # refresh title bar with current command
-    printf "\e]0;%s\a" "$1"
+    printf "\033]0;%s\007" "$1"
 }
 
 # pre command event
@@ -50,34 +58,34 @@ function precmd() {
     local characterLeftArrow=" | "
 
     # font character
-    if [ -f "$HOME/.powerline_font" ]; then
-        characterBranch=$' \ue0a0 '
-        characterLock=$' \ue0a2 '
-        characterRightFillArrow=$'\ue0b0'
-        characterRightArrow=$' \ue0b1 '
-        characterLeftFillArrow=$'\ue0b2'
-        characterLeftArrow=$' \ue0b3 '
+    if ${PROMPT_OPTION_POWERLINE}; then
+        characterBranch=$' \ue0a0 ' &> /dev/null
+        characterLock=$' \ue0a2 ' &> /dev/null
+        characterRightFillArrow=$'\ue0b0' &> /dev/null
+        characterRightArrow=$' \ue0b1 ' &> /dev/null
+        characterLeftFillArrow=$'\ue0b2' &> /dev/null
+        characterLeftArrow=$' \ue0b3 ' &> /dev/null
     fi
 
-    local colorReset=$'%{\e[0m%}'
-    local colorFG=$'%{\e[38;5;231m%}'
-    local colorFGReverse=$'%{\e[38;5;232m%}'
-    local colorHostFG=$'%{\e[38;5;25m%}'
-    local colorHostBG=$'%{\e[48;5;25m%}'
-    local colorDirFG=$'%{\e[38;5;237m%}'
-    local colorDirBG=$'%{\e[48;5;237m%}'
-    local colorLockFG=$'%{\e[38;5;124m%}'
-    local colorLockBG=$'%{\e[48;5;124m%}'
-    local colorGitCommitFG=$'%{\e[38;5;226m%}'
-    local colorGitCommitBG=$'%{\e[48;5;226m%}'
-    local colorGitRemoteFG=$'%{\e[38;5;118m%}'
-    local colorGitRemoteBG=$'%{\e[48;5;118m%}'
-    local colorGitFG=$'%{\e[38;5;237m%}'
-    local colorGitBG=$'%{\e[48;5;237m%}'
-    local colorTimeFG=$'%{\e[38;5;237m%}'
-    local colorTimeBG=$'%{\e[48;5;237m%}'
+    local colorReset=$'%{\033[0m%}'
+    local colorFG=$'%{\033[38;5;231m%}'
+    local colorFGReverse=$'%{\033[38;5;232m%}'
+    local colorHostFG=$'%{\033[38;5;25m%}'
+    local colorHostBG=$'%{\033[48;5;25m%}'
+    local colorDirFG=$'%{\033[38;5;237m%}'
+    local colorDirBG=$'%{\033[48;5;237m%}'
+    local colorLockFG=$'%{\033[38;5;124m%}'
+    local colorLockBG=$'%{\033[48;5;124m%}'
+    local colorGitCommitFG=$'%{\033[38;5;226m%}'
+    local colorGitCommitBG=$'%{\033[48;5;226m%}'
+    local colorGitRemoteFG=$'%{\033[38;5;118m%}'
+    local colorGitRemoteBG=$'%{\033[48;5;118m%}'
+    local colorGitFG=$'%{\033[38;5;237m%}'
+    local colorGitBG=$'%{\033[48;5;237m%}'
+    local colorTimeFG=$'%{\033[38;5;237m%}'
+    local colorTimeBG=$'%{\033[48;5;237m%}'
 
-    local titlebar=$'%{\e]0;%~\a%}'
+    local titlebar=$'%{\033]0;%~\007%}'
 
     # --------------------------------------------------------------------------
     # Title
@@ -90,7 +98,7 @@ function precmd() {
     PROMPT+="${colorReset}${colorDirBG}${colorFG}"
     PROMPT+=" %~ " # current path
     PROMPT+="${colorReset}${colorDirFG}"
-    if [ ! -w "$(pwd)" ]; then
+    if [ ! -w $(pwd) ]; then
         # " ... [> X] >"
         PROMPT+="${colorLockBG}${characterRightFillArrow}${colorFG}"
         PROMPT+="${characterLock}"
@@ -105,14 +113,14 @@ function precmd() {
 
     RPROMPT="${colorReset}"
     # check git prompt file
-    if [ -f "$HOME/.prompt_git" ]; then
+    if ${PROMPT_OPTION_GIT}; then
         local branch=""
         if branch=$(git symbolic-ref HEAD) &>/dev/null; then
             branch="${branch##refs/heads/}"
         else
             branch=$(git rev-parse --short HEAD) &>/dev/null
         fi
-        if [ ! -z "${branch}" ]; then
+        if [ ! -z ${branch} ]; then
             local colorGitFG="${colorGitFG}"
             local colorGitBG="${colorGitBG}"
             local colorGitText="${colorFG}"
