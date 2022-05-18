@@ -1,4 +1,4 @@
-# zsh-prompt
+# mblet-zsh-prompt
 
 <p align="center">
   <img src="./prompt.png" >
@@ -7,7 +7,7 @@
 ### How to install ?
 ``` bash
 mkdir -p $HOME/.zshrc.d
-cp prompt.zsh $HOME/.zshrc.d
+cp mblet-prompt.zsh $HOME/.zshrc.d
 ```
 ``` bash
 # add this in your $HOME/.zshrc
