@@ -22,43 +22,163 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+builtin autoload -Uz add-zsh-hook
 
-PROMPT_SCRIPT_LIB=$("cd" -P -- "$("dirname" -- "$0")" && printf '%s\n' "$(pwd -P)/$("basename" -- "$0")")
+__PROMPTOR_CONFIGFILE="$HOME/.config/promptor/config.zsh"
+
+__promptor_create_config() {
+    builtin local default_config
+    default_config=(
+        # options
+        options.powerline=true
+        options.git=true
+        options.hour=true
+        options.title="%~"
+        options.prompt=" %~ "
+        options.rprompt=" %n@%m "
+        # colors
+        colors.prompt.fg="231"
+        colors.prompt.bg="237"
+        colors.lock.fg="231"
+        colors.lock.bg="124"
+        colors.rprompt.fg="231"
+        colors.rprompt.bg="25"
+        colors.git.fg="231"
+        colors.git.bg="237"
+        colors.git.commit.fg="232"
+        colors.git.commit.bg="226"
+        colors.git.remote.fg="232"
+        colors.git.remote.bg="118"
+        colors.hour.fg="231"
+        colors.hour.bg="237"
+    )
+
+    "mkdir" -p "$("dirname" -- "$__PROMPTOR_CONFIGFILE")"
+    echo "# PROMPTOR CONFIGURATION" > "$__PROMPTOR_CONFIGFILE"
+    echo >> "$__PROMPTOR_CONFIGFILE"
+    echo "declare -A __default_promptor" >> "$__PROMPTOR_CONFIGFILE"
+    echo "declare -A __promptor" >> "$__PROMPTOR_CONFIGFILE"
+    echo >> "$__PROMPTOR_CONFIGFILE"
+    echo "__promptor=(" >> "$__PROMPTOR_CONFIGFILE"
+    echo >> "$__PROMPTOR_CONFIGFILE"
+
+    # transform array to map
+    builtin local value
+    for value in ${default_config[@]}; do
+        builtin local valueLeft=${value%%=*}
+        builtin local valueRight=${value/${valueLeft}=/}
+        echo "defaults.${valueLeft}" "\"${valueRight}\"" >> "$__PROMPTOR_CONFIGFILE"
+    done
+
+    echo >> "$__PROMPTOR_CONFIGFILE"
+
+    # transform array to map
+    for value in ${default_config[@]}; do
+        builtin local valueLeft=${value%%=*}
+        builtin local valueRight=${value/${valueLeft}=/}
+        echo "${valueLeft}" "\"${valueRight}\"" >> "$__PROMPTOR_CONFIGFILE"
+    done
+
+    echo >> "$__PROMPTOR_CONFIGFILE"
+    echo ")" >> "$__PROMPTOR_CONFIGFILE"
+}
+
+if [ ! -f "$__PROMPTOR_CONFIGFILE" ]; then
+    __promptor_create_config
+fi
+# source config file
+. "$__PROMPTOR_CONFIGFILE"
 
 # ------------------------------------------------------------------------------
-# ALIAS
+# FUNCTION
 
-alias prompt_font_enable='sed -i "s/\(PROMPT_OPTION_POWERLINE\)=.*/\1=true/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
-alias prompt_font_disable='sed -i "s/\(PROMPT_OPTION_POWERLINE\)=.*/\1=false/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
-alias prompt_git_enable='sed -i "s/\(PROMPT_OPTION_GIT\)=.*/\1=true/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
-alias prompt_git_disable='sed -i "s/\(PROMPT_OPTION_GIT\)=.*/\1=false/" "$PROMPT_SCRIPT_LIB" && source "$PROMPT_SCRIPT_LIB"'
+__promptor_update_configuration() {
+    builtin local promptor_option=$1
+    builtin local promptor_value=$2
+
+    sed -i "s/^\s*\($promptor_option\)\s\+.*/\1 \"$promptor_value\"/" "$__PROMPTOR_CONFIGFILE" && \
+    __promptor[$promptor_option]="$promptor_value"
+}
+
+__promptor_update_bool_option() {
+    builtin local promptor_option=$1
+    builtin local promptor_value=$2
+    if [ -z "$promptor_value" ] || [[ "$promptor_value" == "false" ]] || [[ "$promptor_value" == "0" ]]; then
+        promptor_value=false
+    else
+        promptor_value=true
+    fi
+    __promptor_update_configuration "$promptor_option" "$promptor_value"
+}
+
+__promptor_update_option() {
+    builtin local promptor_option=$1
+    builtin local promptor_value=$2
+    if [ -z "$promptor_value" ]; then
+        promptor_value=$3
+    fi
+    __promptor_update_configuration "$promptor_option" "$promptor_value"
+}
 
 # ------------------------------------------------------------------------------
-# OPTIONS
 
-PROMPT_OPTION_POWERLINE=true
-PROMPT_OPTION_GIT=true
+promptor_title() { __promptor_update_option options.title "$1" "${__promptor[defaults.options.title]}"; }
+
+promptor_font() { __promptor_update_bool_option options.powerline "$1"; }
+promptor_git() { __promptor_update_bool_option options.git "$1"; }
+promptor_hour() { __promptor_update_bool_option options.hour "$1"; }
+
+promptor_prompt() { __promptor_update_option options.prompt "$1" "${__promptor[defaults.options.prompt]}"; }
+promptor_rprompt() { __promptor_update_option options.rprompt "$1" "${__promptor[defaults.options.rprompt]}"; }
+
+# ------------------------------------------------------------------------------
+
+# Prompt
+promptor_colors_prompt_fg() { __promptor_update_option colors.prompt.fg "$1" "${__promptor[defaults.colors.prompt.fg]}"; }
+promptor_colors_prompt_bg() { __promptor_update_option colors.prompt.bg "$1" "${__promptor[defaults.colors.prompt.bg]}"; }
+# Lock
+promptor_colors_lock_fg() { __promptor_update_option colors.lock.fg "$1" "${__promptor[defaults.colors.lock.fg]}"; }
+promptor_colors_lock_bg() { __promptor_update_option colors.lock.bg "$1" "${__promptor[defaults.colors.lock.bg]}"; }
+
+# RPrompt
+promptor_colors_rprompt_fg() { __promptor_update_option colors.rprompt.fg "$1" "${__promptor[defaults.colors.rprompt.fg]}"; }
+promptor_colors_rprompt_bg() { __promptor_update_option colors.rprompt.bg "$1" "${__promptor[defaults.colors.rprompt.bg]}"; }
+
+# Git
+promptor_colors_git_fg() { __promptor_update_option colors.git.fg "$1" "${__promptor[defaults.colors.git.fg]}"; }
+promptor_colors_git_bg() { __promptor_update_option colors.git.bg "$1" "${__promptor[defaults.colors.git.bg]}"; }
+promptor_colors_git_commit_fg() { __promptor_update_option colors.git.commit.fg "$1" "${__promptor[defaults.colors.git.commit.fg]}"; }
+promptor_colors_git_commit_bg() { __promptor_update_option colors.git.commit.bg "$1" "${__promptor[defaults.colors.git.commit.bg]}"; }
+promptor_colors_git_remote_fg() { __promptor_update_option colors.git.remote.fg "$1" "${__promptor[defaults.colors.git.remote.fg]}"; }
+promptor_colors_git_remote_bg() { __promptor_update_option colors.git.remote.bg "$1" "${__promptor[defaults.colors.git.remote.bg]}"; }
+
+# Hour
+promptor_colors_hour_fg() { __promptor_update_option colors.hour.fg "$1" "${__promptor[defaults.colors.hour.fg]}"; }
+promptor_colors_hour_bg() { __promptor_update_option colors.hour.bg "$1" "${__promptor[defaults.colors.hour.bg]}"; }
 
 # ------------------------------------------------------------------------------
 # HOOK
 
 # pre exec command event
-function preexec() {
+__promptor_preexec() {
     # refresh title bar with current command
-    printf "\033]0;%s\007" "$1"
+    builtin printf "\033]0;%s\007" "$1"
 }
 
 # pre command event
-function precmd() {
-    local characterBranch=" "
-    local characterLock=" X "
-    local characterRightFillArrow=""
-    local characterRightArrow=" | "
-    local characterLeftFillArrow=""
-    local characterLeftArrow=" | "
+__promptor_precmd() {
+    builtin local promptor
+    builtin local rpromptor
+
+    builtin local characterBranch=" "
+    builtin local characterLock=" X "
+    builtin local characterRightFillArrow=""
+    builtin local characterRightArrow=" | "
+    builtin local characterLeftFillArrow=""
+    builtin local characterLeftArrow=" | "
 
     # font character
-    if ${PROMPT_OPTION_POWERLINE}; then
+    if ${__promptor[options.powerline]}; then
         characterBranch=$' \ue0a0 ' &> /dev/null
         characterLock=$' \ue0a2 ' &> /dev/null
         characterRightFillArrow=$'\ue0b0' &> /dev/null
@@ -67,64 +187,79 @@ function precmd() {
         characterLeftArrow=$' \ue0b3 ' &> /dev/null
     fi
 
-    local colorReset=$'%{\033[0m%}'
-    local colorFG=$'%{\033[38;5;231m%}'
-    local colorFGReverse=$'%{\033[38;5;232m%}'
-    local colorHostFG=$'%{\033[38;5;25m%}'
-    local colorHostBG=$'%{\033[48;5;25m%}'
-    local colorDirFG=$'%{\033[38;5;237m%}'
-    local colorDirBG=$'%{\033[48;5;237m%}'
-    local colorLockFG=$'%{\033[38;5;124m%}'
-    local colorLockBG=$'%{\033[48;5;124m%}'
-    local colorGitCommitFG=$'%{\033[38;5;226m%}'
-    local colorGitCommitBG=$'%{\033[48;5;226m%}'
-    local colorGitRemoteFG=$'%{\033[38;5;118m%}'
-    local colorGitRemoteBG=$'%{\033[48;5;118m%}'
-    local colorGitFG=$'%{\033[38;5;237m%}'
-    local colorGitBG=$'%{\033[48;5;237m%}'
-    local colorTimeFG=$'%{\033[38;5;237m%}'
-    local colorTimeBG=$'%{\033[48;5;237m%}'
+    # --------------------------------------------------------------------------
+    # Color
 
-    local titlebar=$'%{\033]0;%~\007%}'
+    builtin local colorReset=$'%{\033[0m%}'
+    # Prompt
+    builtin local colorPromptFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}'m%}'
+    builtin local colorPromptBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}'m%}'
+    builtin local colorPromptChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}'m%}'
+    # Lock
+    builtin local colorLockFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}'m%}'
+    builtin local colorLockBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}'m%}'
+    builtin local colorLockChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}'m%}'
+
+    # RPrompt
+    builtin local colorRPromptFG=$'%{\033[38;5;'${__promptor[colors.rprompt.fg]}'m%}'
+    builtin local colorRPromptBG=$'%{\033[48;5;'${__promptor[colors.rprompt.bg]}'m%}'
+    builtin local colorRPromptChar=$'%{\033[38;5;'${__promptor[colors.rprompt.bg]}'m%}'
+
+    # Git
+    builtin local colorGitFG=$'%{\033[38;5;'${__promptor[colors.git.fg]}'m%}'
+    builtin local colorGitBG=$'%{\033[48;5;'${__promptor[colors.git.bg]}'m%}'
+    builtin local colorGitChar=$'%{\033[38;5;'${__promptor[colors.git.bg]}'m%}'
+    builtin local colorGitCommitFG=$'%{\033[38;5;'${__promptor[colors.git.commit.fg]}'m%}'
+    builtin local colorGitCommitBG=$'%{\033[48;5;'${__promptor[colors.git.commit.bg]}'m%}'
+    builtin local colorGitCommitChar=$'%{\033[38;5;'${__promptor[colors.git.commit.bg]}'m%}'
+    builtin local colorGitRemoteFG=$'%{\033[38;5;'${__promptor[colors.git.remote.fg]}'m%}'
+    builtin local colorGitRemoteBG=$'%{\033[48;5;'${__promptor[colors.git.remote.bg]}'m%}'
+    builtin local colorGitRemoteChar=$'%{\033[38;5;'${__promptor[colors.git.remote.bg]}'m%}'
+
+    # Hour
+    builtin local colorHourFG=$'%{\033[38;5;'${__promptor[colors.hour.fg]}'m%}'
+    builtin local colorHourBG=$'%{\033[48;5;'${__promptor[colors.hour.bg]}'m%}'
+    builtin local colorHourChar=$'%{\033[38;5;'${__promptor[colors.hour.bg]}'m%}'
 
     # --------------------------------------------------------------------------
     # Title
-    PROMPT="${titlebar}"
+    builtin local titlebar=$'%{\033]0;'${__promptor[options.title]}'\007%}'
+    promptor="${titlebar}"
 
     # --------------------------------------------------------------------------
     # Left prompt
 
     # " [...] > X >"
-    PROMPT+="${colorReset}${colorDirBG}${colorFG}"
-    PROMPT+=" %~ " # current path
-    PROMPT+="${colorReset}${colorDirFG}"
+    promptor+="${colorReset}${colorPromptBG}${colorPromptFG}"
+    promptor+="${__promptor[options.prompt]}"
+    promptor+="${colorReset}${colorPromptChar}"
     if [ ! -w "$(pwd)" ]; then
         # " ... [> X] >"
-        PROMPT+="${colorLockBG}${characterRightFillArrow}${colorFG}"
-        PROMPT+="${characterLock}"
-        PROMPT+="${colorReset}${colorLockFG}"
+        promptor+="${colorLockBG}${characterRightFillArrow}${colorPromptFG}"
+        promptor+="${characterLock}"
+        promptor+="${colorReset}${colorLockChar}"
     fi
     # " ... > X [>]"
-    PROMPT+="${characterRightFillArrow}"
-    PROMPT+="${colorReset} "
+    promptor+="${characterRightFillArrow}"
+    promptor+="${colorReset} "
 
     # --------------------------------------------------------------------------
     # Right prompt
 
-    RPROMPT="${colorReset}"
+    rpromptor="${colorReset}"
     # check git prompt file
-    if ${PROMPT_OPTION_GIT}; then
-        local branch=""
-        if branch=$(git symbolic-ref HEAD) &>/dev/null; then
+    if ${__promptor[options.git]}; then
+        builtin local branch=""
+        if branch="$(git symbolic-ref HEAD)" &>/dev/null; then
             branch="${branch##refs/heads/}"
         else
-            branch=$(git rev-parse --short HEAD) &>/dev/null
+            branch="$(git rev-parse --short HEAD)" &>/dev/null
         fi
-        if [ ! -z "${branch}" ]; then
-            local colorGitFG="${colorGitFG}"
-            local colorGitBG="${colorGitBG}"
-            local colorGitText="${colorFG}"
-            local count=""
+        if [ -n "${branch}" ]; then
+            builtin local colorGitFG="${colorGitFG}"
+            builtin local colorGitBG="${colorGitBG}"
+            builtin local colorGitChar="${colorGitChar}"
+            builtin local count=""
             if git ls-files --others --exclude-standard \
                 --directory --no-empty-directory \
                 --error-unmatch -- ':/*' &>/dev/null ||
@@ -133,38 +268,47 @@ function precmd() {
             then
                 colorGitFG="${colorGitCommitFG}"
                 colorGitBG="${colorGitCommitBG}"
-                colorGitText="${colorFGReverse}"
+                colorGitChar="${colorGitCommitChar}"
             elif count=$(git rev-list --count HEAD...origin/HEAD) &>/dev/null
             then
                 if [ "$count" = "0" ]; then
                     colorGitFG="${colorGitRemoteFG}"
                     colorGitBG="${colorGitRemoteBG}"
-                    colorGitText="${colorFGReverse}"
+                    colorGitChar="${colorGitRemoteChar}"
                 fi
             elif count=$(git rev-list --count HEAD...origin/$branch) &>/dev/null
             then
                 if [ "$count" = "0" ]; then
                     colorGitFG="${colorGitRemoteFG}"
                     colorGitBG="${colorGitRemoteBG}"
-                    colorGitText="${colorFGReverse}"
+                    colorGitChar="${colorGitRemoteChar}"
                 fi
             fi
             # " [<] ... < ... "
-            RPROMPT+="${colorGitFG}${characterLeftFillArrow}"
+            rpromptor+="${colorGitChar}${characterLeftFillArrow}"
             # " < [...] < ... "
-            RPROMPT+="${colorGitBG}${colorGitText} ${branch}${characterBranch}"
+            rpromptor+="${colorGitBG}${colorGitFG} ${branch}${characterBranch}"
         fi
     fi
 
     # " [< ...] < ... "
-    RPROMPT+="${colorHostFG}${characterLeftFillArrow}"
-    RPROMPT+="${colorHostBG}${colorFG}"
-    RPROMPT+=" %n@%m " # user@hostname
+    rpromptor+="${colorRPromptChar}${characterLeftFillArrow}"
+    rpromptor+="${colorRPromptBG}${colorRPromptFG}"
+    rpromptor+="${__promptor[options.rprompt]}"
 
-    # " < ... [<] ... "
-    RPROMPT+="${colorTimeFG}${characterLeftFillArrow}"
-    # " < ... < [...] "
-    RPROMPT+="${colorReset}${colorTimeBG}${colorFG}"
-    RPROMPT+=" %D{%H:%M} " # current date
-    RPROMPT+="${colorReset}"
+    if ${__promptor[options.hour]}; then
+        # " < ... [<] ... "
+        rpromptor+="${colorHourChar}${characterLeftFillArrow}"
+        # " < ... < [...] "
+        rpromptor+="${colorReset}${colorHourBG}${colorHourFG}"
+        rpromptor+=" %D{%H:%M} " # current date
+    fi
+
+    rpromptor+="${colorReset}"
+
+    PS1="${promptor}"
+    RPROMPT="${rpromptor}"
 }
+
+add-zsh-hook precmd __promptor_precmd
+add-zsh-hook preexec __promptor_preexec
