@@ -54,33 +54,33 @@ __promptor_create_config() {
     )
 
     "mkdir" -p "$("dirname" -- "$__PROMPTOR_CONFIGFILE")"
-    echo "# PROMPTOR CONFIGURATION" > "$__PROMPTOR_CONFIGFILE"
-    echo >> "$__PROMPTOR_CONFIGFILE"
-    echo "declare -A __default_promptor" >> "$__PROMPTOR_CONFIGFILE"
-    echo "declare -A __promptor" >> "$__PROMPTOR_CONFIGFILE"
-    echo >> "$__PROMPTOR_CONFIGFILE"
-    echo "__promptor=(" >> "$__PROMPTOR_CONFIGFILE"
-    echo >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo "# PROMPTOR CONFIGURATION" > "$__PROMPTOR_CONFIGFILE"
+    builtin echo >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo "declare -A __default_promptor" >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo "declare -A __promptor" >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo "__promptor=(" >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo >> "$__PROMPTOR_CONFIGFILE"
 
     # transform array to map
     builtin local value
     for value in ${default_config[@]}; do
         builtin local valueLeft=${value%%=*}
         builtin local valueRight=${value/${valueLeft}=/}
-        echo "defaults.${valueLeft}" "\"${valueRight}\"" >> "$__PROMPTOR_CONFIGFILE"
+        builtin echo "defaults.${valueLeft}" "\"${valueRight}\"" >> "$__PROMPTOR_CONFIGFILE"
     done
 
-    echo >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo >> "$__PROMPTOR_CONFIGFILE"
 
     # transform array to map
     for value in ${default_config[@]}; do
         builtin local valueLeft=${value%%=*}
         builtin local valueRight=${value/${valueLeft}=/}
-        echo "${valueLeft}" "\"${valueRight}\"" >> "$__PROMPTOR_CONFIGFILE"
+        builtin echo "${valueLeft}" "\"${valueRight}\"" >> "$__PROMPTOR_CONFIGFILE"
     done
 
-    echo >> "$__PROMPTOR_CONFIGFILE"
-    echo ")" >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo >> "$__PROMPTOR_CONFIGFILE"
+    builtin echo ")" >> "$__PROMPTOR_CONFIGFILE"
 }
 
 if [ ! -f "$__PROMPTOR_CONFIGFILE" ]; then
@@ -192,39 +192,39 @@ __promptor_precmd() {
 
     builtin local colorReset=$'%{\033[0m%}'
     # Prompt
-    builtin local colorPromptFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}'m%}'
-    builtin local colorPromptBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}'m%}'
-    builtin local colorPromptChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}'m%}'
+    builtin local colorPromptFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}$'m%}'
+    builtin local colorPromptBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}$'m%}'
+    builtin local colorPromptChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}$'m%}'
     # Lock
-    builtin local colorLockFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}'m%}'
-    builtin local colorLockBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}'m%}'
-    builtin local colorLockChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}'m%}'
+    builtin local colorLockFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}$'m%}'
+    builtin local colorLockBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}$'m%}'
+    builtin local colorLockChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}$'m%}'
 
     # RPrompt
-    builtin local colorRPromptFG=$'%{\033[38;5;'${__promptor[colors.rprompt.fg]}'m%}'
-    builtin local colorRPromptBG=$'%{\033[48;5;'${__promptor[colors.rprompt.bg]}'m%}'
-    builtin local colorRPromptChar=$'%{\033[38;5;'${__promptor[colors.rprompt.bg]}'m%}'
+    builtin local colorRPromptFG=$'%{\033[38;5;'${__promptor[colors.rprompt.fg]}$'m%}'
+    builtin local colorRPromptBG=$'%{\033[48;5;'${__promptor[colors.rprompt.bg]}$'m%}'
+    builtin local colorRPromptChar=$'%{\033[38;5;'${__promptor[colors.rprompt.bg]}$'m%}'
 
     # Git
-    builtin local colorGitFG=$'%{\033[38;5;'${__promptor[colors.git.fg]}'m%}'
-    builtin local colorGitBG=$'%{\033[48;5;'${__promptor[colors.git.bg]}'m%}'
-    builtin local colorGitChar=$'%{\033[38;5;'${__promptor[colors.git.bg]}'m%}'
-    builtin local colorGitCommitFG=$'%{\033[38;5;'${__promptor[colors.git.commit.fg]}'m%}'
-    builtin local colorGitCommitBG=$'%{\033[48;5;'${__promptor[colors.git.commit.bg]}'m%}'
-    builtin local colorGitCommitChar=$'%{\033[38;5;'${__promptor[colors.git.commit.bg]}'m%}'
-    builtin local colorGitRemoteFG=$'%{\033[38;5;'${__promptor[colors.git.remote.fg]}'m%}'
-    builtin local colorGitRemoteBG=$'%{\033[48;5;'${__promptor[colors.git.remote.bg]}'m%}'
-    builtin local colorGitRemoteChar=$'%{\033[38;5;'${__promptor[colors.git.remote.bg]}'m%}'
+    builtin local colorGitFG=$'%{\033[38;5;'${__promptor[colors.git.fg]}$'m%}'
+    builtin local colorGitBG=$'%{\033[48;5;'${__promptor[colors.git.bg]}$'m%}'
+    builtin local colorGitChar=$'%{\033[38;5;'${__promptor[colors.git.bg]}$'m%}'
+    builtin local colorGitCommitFG=$'%{\033[38;5;'${__promptor[colors.git.commit.fg]}$'m%}'
+    builtin local colorGitCommitBG=$'%{\033[48;5;'${__promptor[colors.git.commit.bg]}$'m%}'
+    builtin local colorGitCommitChar=$'%{\033[38;5;'${__promptor[colors.git.commit.bg]}$'m%}'
+    builtin local colorGitRemoteFG=$'%{\033[38;5;'${__promptor[colors.git.remote.fg]}$'m%}'
+    builtin local colorGitRemoteBG=$'%{\033[48;5;'${__promptor[colors.git.remote.bg]}$'m%}'
+    builtin local colorGitRemoteChar=$'%{\033[38;5;'${__promptor[colors.git.remote.bg]}$'m%}'
 
     # Hour
-    builtin local colorHourFG=$'%{\033[38;5;'${__promptor[colors.hour.fg]}'m%}'
-    builtin local colorHourBG=$'%{\033[48;5;'${__promptor[colors.hour.bg]}'m%}'
-    builtin local colorHourChar=$'%{\033[38;5;'${__promptor[colors.hour.bg]}'m%}'
+    builtin local colorHourFG=$'%{\033[38;5;'${__promptor[colors.hour.fg]}$'m%}'
+    builtin local colorHourBG=$'%{\033[48;5;'${__promptor[colors.hour.bg]}$'m%}'
+    builtin local colorHourChar=$'%{\033[38;5;'${__promptor[colors.hour.bg]}$'m%}'
 
     # --------------------------------------------------------------------------
     # Title
-    builtin local titlebar=$'%{\033]0;'${__promptor[options.title]}'\007%}'
-    promptor="${titlebar}"
+    builtin local titleBar=$'%{\033]0;'${__promptor[options.title]}$'\007%}'
+    promptor="${titleBar}"
 
     # --------------------------------------------------------------------------
     # Left prompt
