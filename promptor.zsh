@@ -196,9 +196,9 @@ __promptor_precmd() {
     builtin local colorPromptBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}$'m%}'
     builtin local colorPromptChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}$'m%}'
     # Lock
-    builtin local colorLockFG=$'%{\033[38;5;'${__promptor[colors.prompt.fg]}$'m%}'
-    builtin local colorLockBG=$'%{\033[48;5;'${__promptor[colors.prompt.bg]}$'m%}'
-    builtin local colorLockChar=$'%{\033[38;5;'${__promptor[colors.prompt.bg]}$'m%}'
+    builtin local colorLockFG=$'%{\033[38;5;'${__promptor[colors.lock.fg]}$'m%}'
+    builtin local colorLockBG=$'%{\033[48;5;'${__promptor[colors.lock.bg]}$'m%}'
+    builtin local colorLockChar=$'%{\033[38;5;'${__promptor[colors.lock.bg]}$'m%}'
 
     # RPrompt
     builtin local colorRPromptFG=$'%{\033[38;5;'${__promptor[colors.rprompt.fg]}$'m%}'
@@ -235,7 +235,7 @@ __promptor_precmd() {
     promptor+="${colorReset}${colorPromptChar}"
     if [ ! -w "$(pwd)" ]; then
         # " ... [> X] >"
-        promptor+="${colorLockBG}${characterRightFillArrow}${colorPromptFG}"
+        promptor+="${colorLockBG}${characterRightFillArrow}${colorLockFG}"
         promptor+="${characterLock}"
         promptor+="${colorReset}${colorLockChar}"
     fi
