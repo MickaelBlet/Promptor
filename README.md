@@ -1,7 +1,7 @@
 # Promptor
 
 <p align="center">
-  <img src="./prompt.png" >
+  <img src="./promptor.drawio.png" >
 </p>
 
 ### How to install ?
@@ -47,6 +47,11 @@ promptor_colors_git_remote_bg "118"
 promptor_colors_hour_fg "231"
 promptor_colors_hour_bg "237"
 ```
+
+<p align="center">
+  <img src="./promptor.functions.drawio.png" >
+</p>
+
 ---
 
 ### What is this font ?
