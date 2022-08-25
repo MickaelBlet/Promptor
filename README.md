@@ -1,58 +1,71 @@
 # Promptor
 
 <p align="center">
-  <img src="./promptor.drawio.png" >
+  <img src="./images/promptor.drawio.png" >
 </p>
 
-### How to install ?
+## Font
+<a url="https://github.com/powerline/fonts">https://github.com/powerline/fonts</a>
+
+## How to install ?
 ``` bash
 mkdir -p $HOME/.zshrc.d
-cp promptor.zsh $HOME/.zshrc.d
+cp -r promptor $HOME/.zshrc.d
 ```
 ``` bash
 # add this in your $HOME/.zshrc
 for file ($HOME/.zshrc.d/**/*.zsh) source $file
 ```
-### Functions:
-``` bash
-# ------------------------------------------------------------------------------
-# OPTIONS
-# ------------------------------------------------------------------------------
-promptor_prompt " %~ "
-promptor_rprompt " %n@%m "
-promptor_title "%~"
-promptor_font "true"
-promptor_git "true"
-promptor_hour "true"
-# ------------------------------------------------------------------------------
-# COLORS (256)
-# ------------------------------------------------------------------------------
-# Prompt
-promptor_colors_prompt_fg "231"
-promptor_colors_prompt_bg "237"
-# Lock
-promptor_colors_lock_fg "231"
-promptor_colors_lock_bg "124"
-# RPrompt
-promptor_colors_rprompt_fg "231"
-promptor_colors_rprompt_bg "25"
-# Git
-promptor_colors_git_fg "231"
-promptor_colors_git_bg "237"
-promptor_colors_git_commit_fg "232"
-promptor_colors_git_commit_bg "226"
-promptor_colors_git_remote_fg "232"
-promptor_colors_git_remote_bg "118"
-# Hour
-promptor_colors_hour_fg "231"
-promptor_colors_hour_bg "237"
-```
+## Section
+Add section in **promptor_config_prompt** or **promptor_config_rprompt**
 
+{{ **BACKGROUND** **FOREGROUND** **CONTENT** }}
+
+Change color of prompt
 <p align="center">
-  <img src="./promptor.functions.drawio.png" >
+  <img src="./images/promptor.section.drawio.png" >
 </p>
 
----
+## Function
+Call functions in **promptor_config_prompt** and **promptor_config_rprompt** with {{ **FUNCTION** }}
 
-### What is this font ?
-<a url="https://github.com/powerline/fonts">https://github.com/powerline/fonts</a>
+~/.zshrc.d/promptor/promptor_functions/example
+``` bash
+# CONFIG (comment required for configuration)
+example.bg="231"
+example.fg="232"
+example.value="foo bar"
+
+# FUNCTION (comment required for configuration)
+echo ${promptor_config[example.bg]} ${promptor_config[example.fg]} "${promptor_config[example.value]}"
+```
+
+Create automaticaly the manage function configurations:
+- promptor_config_example_bg
+- promptor_config_example_fg
+- promptor_config_example_value
+
+<p align="center">
+  <img src="./images/promptor.function.drawio.png" >
+</p>
+
+## Configuration
+
+Default configuration:
+``` bash
+$ promptor_config_list
+git.active             = "true"
+git.bg                 = "237"
+git.commit.bg          = "226"
+git.commit.fg          = "232"
+git.fg                 = "231"
+git.remote.bg          = "118"
+git.remote.fg          = "232"
+max_command_title_size = "100"
+powerline              = "false"
+prompt                 = "{{237 231 %~}}{{git}}{{unwritten}}"
+rprompt                = "{{25 231 %n@%m}}{{237 231 %D{%H:%M}}}"
+title                  = "%n: %~"
+unwritten.bg           = "124"
+unwritten.fg           = "231"
+```

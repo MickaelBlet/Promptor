@@ -1,0 +1,59 @@
+# CONFIG (please don't delete this line)
+git.bg="237"
+git.fg="231"
+git.commit.bg="226"
+git.commit.fg="232"
+git.remote.bg="118"
+git.remote.fg="232"
+git.active="true"
+
+# FUNCTION (please don't delete this line)
+if ! ${promptor_config[git.active]}; then
+    return
+fi
+
+__promptor_function_git_command() {
+    GIT_OPTIONAL_LOCKS=0 command git "$@"
+}
+
+local current_branch=$(__promptor_function_git_command symbolic-ref --quiet HEAD 2> /dev/null)
+local ret=$?
+if [[ $ret != 0 ]]; then
+    [[ $ret == 128 ]] && return # no git repo.
+    current_branch=$(__promptor_function_git_command rev-parse --short HEAD 2> /dev/null) || return
+fi
+current_branch=${current_branch#refs/heads/}
+
+if [ -n "${current_branch}" ]; then
+    # font character
+    local branch_character=''
+    if ${promptor_config[powerline]}; then
+        branch_character=$' \ue0a0' &> /dev/null
+    fi
+    local color_git_bg=${promptor_config[git.bg]}
+    local color_git_fg=${promptor_config[git.fg]}
+    local count=''
+    if __promptor_function_git_command ls-files --others --exclude-standard \
+        --directory --no-empty-directory \
+        --error-unmatch -- ':/*' &>/dev/null ||
+        ! __promptor_function_git_command diff --no-ext-diff --quiet ||
+        ! __promptor_function_git_command diff --no-ext-diff --cached --quiet
+    then
+        color_git_bg=${promptor_config[git.commit.bg]}
+        color_git_fg=${promptor_config[git.commit.fg]}
+    elif count=$(__promptor_function_git_command rev-list --count HEAD...origin/HEAD) &>/dev/null
+    then
+        if [ "$count" = "0" ]; then
+            color_git_bg=${promptor_config[git.remote.bg]}
+            color_git_fg=${promptor_config[git.remote.fg]}
+        fi
+    elif count=$(__promptor_function_git_command rev-list --count "HEAD...origin/$current_branch") &>/dev/null
+    then
+        if [ "$count" = "0" ]; then
+            color_git_bg=${promptor_config[git.remote.bg]}
+            color_git_fg=${promptor_config[git.remote.fg]}
+        fi
+    fi
+
+    echo ${color_git_bg} ${color_git_fg} "${current_branch:gs/%/%%}${branch_character}"
+fi
