@@ -174,7 +174,7 @@ __promptor_load_functions() {
 # pre exec command event
 __promptor::preexec() {
     # refresh title bar with current command
-    builtin printf "\033]0;%*.*s\007" "${promptor_config[max_command_title_size]}" "${promptor_config[max_command_title_size]}" "$1"
+    builtin printf "\033]0;%.*s\007" "${promptor_config[max_command_title_size]}" "$1"
 }
 
 # pre command event
