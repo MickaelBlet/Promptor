@@ -122,7 +122,7 @@ __promptor_load_configs() {
         # create update config function
         if ! [[ "$value" =~ "default."* ]]; then
             builtin eval "
-                export promptor_config_${${value%%=*}//'.'/'_'} () {
+                promptor_config_${${value%%=*}//'.'/'_'} () {
                     if [ -n \"\$1\" ] || [ \"\${1+x\$1}\" = \"x\" ] ; then
                         __promptor_update_config "${value%%=*}" "\$1"
                     else
