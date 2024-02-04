@@ -14,7 +14,7 @@ cp -r promptor $HOME/.zshrc.d
 ```
 ``` bash
 # add this in your $HOME/.zshrc
-for file ($HOME/.zshrc.d/**/*.zsh) source $file
+source "$HOME/.zshrc.d/promptor/promptor.zsh"
 ```
 ## Section
 Add section in **promptor_config_prompt** or **promptor_config_rprompt**
