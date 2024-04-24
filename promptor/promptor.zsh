@@ -26,6 +26,16 @@
 builtin autoload -Uz add-zsh-hook
 
 # ------------------------------------------------------------------------------
+# RELOAD
+
+__PROMPTOR_PATH="${0:a}"
+
+promptor_reload() {
+    echo "reload $__PROMPTOR_PATH"
+    builtin source "$__PROMPTOR_PATH"
+}
+
+# ------------------------------------------------------------------------------
 # CONFIGURATION
 
 builtin declare -A promptor_config
@@ -213,7 +223,7 @@ __promptor::precmd() {
             fi
         else
             # section
-            if echo "$promptor_functions" | grep '^[^{]*{{[0-9]\+\s\+[0-9]\+\s.*}}.*' &> /dev/null; then
+            if builtin echo "$promptor_functions" | grep '^[^{]*{{[0-9]\+\s\+[0-9]\+\s.*}}.*' &> /dev/null; then
                 builtin set -- "$(echo "$promptor_functions" | sed 's/^[^{]*{{\([0-9]\+\).*}}.*/\1/')" \
                                "$(echo "$promptor_functions" | sed 's/^[^{]*{{[0-9]\+\s\+\([0-9]\+\).*}}.*/\1/')" \
                                "$(echo "$promptor_functions" | sed 's/^[^{]*{{[0-9]\+\s\+[0-9]\+\s\(.*\)}}.*/\1/')"
