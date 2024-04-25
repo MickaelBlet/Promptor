@@ -8,8 +8,8 @@
 <a url="https://github.com/powerline/fonts">https://github.com/powerline/fonts</a>
 
 ## How to install ?
-``` bash
-mkdir -p $HOME/.zshrc.d
+``` bash 
+mkdir -p $HOME/.zshrc. d
 cp -r promptor $HOME/.zshrc.d
 ```
 ``` bash

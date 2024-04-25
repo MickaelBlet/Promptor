@@ -26,7 +26,7 @@
 builtin autoload -Uz add-zsh-hook
 
 # ------------------------------------------------------------------------------
-# RELOAD
+ # RELOAD
 
 __PROMPTOR_PATH="${0:a}"
 
