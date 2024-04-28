@@ -31,13 +31,19 @@ Call functions in **promptor_config_prompt** and **promptor_config_rprompt** wit
 
 ~/.zshrc.d/promptor/promptor_functions/example
 ``` bash
-# CONFIG (comment required for configuration)
-example.bg="231"
-example.fg="232"
-example.value="foo bar"
-
-# FUNCTION (comment required for configuration)
-echo ${promptor_config[example.bg]} ${promptor_config[example.fg]} "${promptor_config[example.value]}"
+# default configuration
+promptor_config+=(
+    [example.bg]=231
+    [example.fg]=232
+    [example.value]="foo bar"
+)
+# must be prefix by promptor_function_
+promptor_function_example() {
+    # the function must be print at least 3 arguments
+    echo "${promptor_config[example.bg]}"    # BACKGROUND
+    echo "${promptor_config[example.fg]}"    # FOREGROUND
+    echo "${promptor_config[example.value]}" # CONTENT
+}
 ```
 
 Create automaticaly the manage function configurations:
@@ -54,18 +60,20 @@ Create automaticaly the manage function configurations:
 Default configuration:
 ``` bash
 $ promptor_config_list
-git.active             = "true"
-git.bg                 = "237"
-git.commit.bg          = "226"
-git.commit.fg          = "232"
-git.fg                 = "231"
-git.remote.bg          = "118"
-git.remote.fg          = "232"
-max_command_title_size = "100"
-powerline              = "false"
-prompt                 = "{{237 231 %~}}{{git}}{{unwritten}}"
-rprompt                = "{{25 231 %n@%m}}{{237 231 %D{%H:%M}}}"
-title                  = "%n: %~"
-unwritten.bg           = "124"
-unwritten.fg           = "231"
+git.active                     = "true"
+git.bg                         = "237"
+git.commit.bg                  = "226"
+git.commit.fg                  = "232"
+git.fg                         = "231"
+git.remote.bg                  = "118"
+git.remote.fg                  = "232"
+max_command_title_size         = "100"
+powerline                      = "false"
+powerline_right_fill_character = "\ue0b0"
+powerline_left_fill_character  = "\ue0b2"
+prompt                         = "{{237 231 %~}}{{git}}{{unwritten}}"
+rprompt                        = "{{25 231 %n@%m}}{{237 231 %D{%H:%M}}}"
+title                          = "%n: %~"
+unwritten.bg                   = "124"
+unwritten.fg                   = "231"
 ```
