@@ -1,13 +1,19 @@
-# CONFIG (please don't delete this line)
-unwritten.bg="124"
-unwritten.fg="231"
+# default config
+promptor_config+=(
+	[unwritten.bg]=124
+	[unwritten.fg]=231
+)
 
-# FUNCTION (please don't delete this line)
-if [ ! -w "$(pwd)" ]; then
-    # font character
-    local character_lock='X'
-    if ${promptor_config[powerline]}; then
-        character_lock=$'\ue0a2' &> /dev/null
-    fi
-    echo ${promptor_config[unwritten.bg]} ${promptor_config[unwritten.fg]} "$character_lock"
-fi
+# must be prefix by promptor_function_
+promptor_function_unwritten() {
+	if [ ! -w "$(pwd)" ]; then
+		# font character
+		local character_lock='X'
+		if [ "${promptor_config[powerline]}" = true ]; then
+			character_lock=$'\ue0a2' &> /dev/null
+		fi
+		echo "${promptor_config[unwritten.bg]}"
+		echo "${promptor_config[unwritten.fg]}"
+		echo "$character_lock"
+	fi
+}

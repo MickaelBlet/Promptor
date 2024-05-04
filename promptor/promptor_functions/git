@@ -1,59 +1,433 @@
-# CONFIG (please don't delete this line)
-git.bg="237"
-git.fg="231"
-git.commit.bg="226"
-git.commit.fg="232"
-git.remote.bg="118"
-git.remote.fg="232"
-git.active="true"
+# default config
+promptor_config+=(
+	[git]=true
+	# color
+	[git.color.bg]=240
+	[git.color.fg]=231
+	[git.color.conflict.bg]=124
+	[git.color.conflict.fg]=231
+	[git.color.dirty.bg]=226
+	[git.color.dirty.fg]=232
+	[git.color.added.bg]=207
+	[git.color.added.fg]=232
+	[git.color.untracked.bg]=214
+	[git.color.untracked.fg]=232
+	[git.color.detached.bg]=97
+	[git.color.detached.fg]=231
+	[git.color.remote.bg]=118
+	[git.color.remote.fg]=232
+	# color sequence list:
+	# - conflict
+	# - dirty
+	# - added
+	# - untracked
+	# - detached
+	# - remote
+	[git.color.sequence]="conflict dirty added untracked detached remote"
+	[git.hide_if_pwd_ignored]=false
+	[git.compress.sparse.state]=true
+	[git.omit.sparse.state]=true
+	# information sequence list:
+	# - dirty
+	# - added
+	# - untracked
+	# - stash
+	# - upstream
+	[git.information.sequence]="dirty added untracked stash upstream"
+	# git describe branch or tag or ...
+	# - contains
+	# - branch
+	# - tag
+	# - describe
+	# - *
+	[git.describe.style]="tag"
+	# show upstream options list:
+	# - git | svn  choose your repo type
+	# - verbose    show number up or down stream
+	# - legacy     use legacy command
+	# - name       show the name of bramch or commit
+	[git.show.upstream]="verbose"
+	[git.character.dirty]="M"
+	[git.character.added]="A"
+	[git.character.untracked]="U"
+	[git.character.stash]="S"
+	[git.character.upstream.left]="\u2b63"
+	[git.character.upstream.right]="\u2b61"
+	[git.character.branch]="\u26d5"
+	[git.character.tag]="\uf02b"
+	[git.character.hash]="\u2d4c"
+	[git.character.separator]="\u2502"
+	[git.character.separator.prompt]="\u2503"
+	[git.character.separator.rprompt]="\u2503"
+	[git.powerline.character.dirty]="M"
+	[git.powerline.character.added]="A"
+	[git.powerline.character.untracked]="U"
+	[git.powerline.character.stash]="S"
+	[git.powerline.character.upstream.left]="\u2b63"
+	[git.powerline.character.upstream.right]="\u2b61"
+	[git.powerline.character.branch]="\ue0a0"
+	[git.powerline.character.tag]="\uf02b"
+	[git.powerline.character.hash]="\u2d4c"
+	[git.powerline.character.separator]="\u2502"
+	[git.powerline.character.separator.prompt]="\ue0b1"
+	[git.powerline.character.separator.rprompt]="\ue0b3"
+)
 
-# FUNCTION (please don't delete this line)
-if ! ${promptor_config[git.active]}; then
-    return
-fi
+# must be prefix by promptor_function_
+promptor_function_git() {
 
-__promptor_function_git_command() {
-    GIT_OPTIONAL_LOCKS=0 command git "$@"
+	if [ "${promptor_config[git]}" = false ]; then
+		return
+	fi
+
+	local prompt_side="$1"
+
+	__promptor_function_git_command() {
+		GIT_OPTIONAL_LOCKS=0 command git "$@"
+	}
+
+	# get info of git repository
+	local rev_parse
+	rev_parse="$(__promptor_function_git_command rev-parse --git-dir \
+		--is-inside-git-dir --is-bare-repository --is-inside-work-tree \
+		--show-ref-format --short HEAD 2> /dev/null)"
+	local rev_parse_exit_code=$?
+	if [ -z "$rev_parse" ]; then
+		return
+	fi
+
+	local rev_parse_short=""
+	local rev_parse_show_ref_format=""
+	local rev_parse_is_inside_work_tree=""
+	local rev_parse_is_bare_repository=""
+	local rev_parse_is_inside_git_dir=""
+	local rev_parse_git_dir=""
+
+	if [ $rev_parse_exit_code -eq 0 ]; then
+		rev_parse_short="${rev_parse##*$'\n'}"
+		rev_parse="${rev_parse%$'\n'*}"
+	fi
+	rev_parse_show_ref_format="${rev_parse##*$'\n'}"
+	rev_parse="${rev_parse%$'\n'*}"
+	rev_parse_is_inside_work_tree="${rev_parse##*$'\n'}"
+	rev_parse="${rev_parse%$'\n'*}"
+	rev_parse_is_bare_repository="${rev_parse##*$'\n'}"
+	rev_parse="${rev_parse%$'\n'*}"
+	rev_parse_is_inside_git_dir="${rev_parse##*$'\n'}"
+	rev_parse="${rev_parse%$'\n'*}"
+	rev_parse_git_dir="${rev_parse##*$'\n'}"
+
+	if [ "$rev_parse_is_inside_work_tree" = true ] &&
+	   [ "${promptor_config[git.hide_if_pwd_ignored]}" = true ] &&
+	   [[ "$(__promptor_function_git_command config --bool bash.hideIfPwdIgnored)" != "false" ]] &&
+	   __promptor_function_git_command check-ignore -q .; then
+		return
+	fi
+
+	if [ "$rev_parse_is_inside_work_tree" = true ]; then
+		typeset -i fd_count_dirty=-1
+		typeset -i fd_count_added=-1
+		typeset -i fd_count_stash=-1
+		typeset -i fd_count_untracked=-1
+		typeset -i fd_count_upstream=-1
+		exec {fd_count_dirty}< <(__promptor_function_git_command diff --name-only --no-ext-diff 2> /dev/null | wc -l )
+		exec {fd_count_added}< <(__promptor_function_git_command diff --name-only --no-ext-diff --cached 2> /dev/null | wc -l)
+		exec {fd_count_stash}< <(__promptor_function_git_command rev-list --walk-reflogs --count refs/stash 2> /dev/null || echo 0)
+		exec {fd_count_untracked}< <(__promptor_function_git_command ls-files --others --exclude-standard --directory --no-empty-directory --error-unmatch -- ':/*' 2>/dev/null | wc -l)
+		exec {fd_count_upstream}< <(__promptor_function_git_command rev-list --count --left-right "@{upstream}...HEAD" 2>/dev/null)
+	fi
+
+	__promptor_function_git_dir_read() {
+		test -r "$rev_parse_git_dir/$1" && IFS=$'\r\n' read -r "$2" < "$rev_parse_git_dir/$1"
+	}
+
+	local sparse_checkout=false
+	if [ "${promptor_config[git.compress.sparse.state]}" = true ] &&
+	   [ "${promptor_config[git.omit.sparse.state]}" = true ] &&
+	   [ "$(__promptor_function_git_command config --bool core.sparseCheckout)" = "true" ]; then
+		sparse_checkout=true
+	fi
+
+	local detached=""
+	local hashed=""
+
+	local branch=""
+	local rebase_num=""
+	local rebase_total=""
+	local rebase_action=""
+	local sequencer_todo=""
+	local branch=""
+
+	if [ -d "$rev_parse_git_dir/rebase-merge" ]; then
+		__promptor_function_git_dir_read "rebase-merge/head-name" branch
+		__promptor_function_git_dir_read "rebase-merge/msgnum" rebase_num
+		__promptor_function_git_dir_read "rebase-merge/end" rebase_total
+		rebase_action="REBASE"
+	else
+		if [ -d "$rev_parse_git_dir/rebase-apply" ]; then
+			__promptor_function_git_dir_read "rebase-apply/next" rebase_num
+			__promptor_function_git_dir_read "rebase-apply/last" rebase_total
+			if [ -f "$rev_parse_git_dir/rebase-apply/rebasing" ]; then
+				__promptor_function_git_dir_read "rebase-apply/head-name" branch
+				rebase_action="REBASE"
+			elif [ -f "$rev_parse_git_dir/rebase-apply/applying" ]; then
+				rebase_action="REBASE-APPLYING"
+			else
+				rebase_action="REBASE/APPLYING"
+			fi
+		elif [ -f "$rev_parse_git_dir/MERGE_HEAD" ]; then
+			rebase_action="MERGE"
+		elif [ -f "$rev_parse_git_dir/CHERRY_PICK_HEAD" ]; then
+			rebase_action="CHERRY-PICK"
+		elif [ -f "$rev_parse_git_dir/REVERT_HEAD" ]; then
+			rebase_action="REVERT"
+		elif __promptor_function_git_dir_read "$rev_parse_git_dir/sequencer/todo" sequencer_todo; then
+			case "$sequencer_todo" in
+				p[\ \	]|pick[\ \	]*)
+					rebase_action="CHERRY-PICK";;
+				revert[\ \	]*)
+					rebase_action="REVERT";;
+			esac
+		elif [ -f "$rev_parse_git_dir/BISECT_LOG" ]; then
+			rebase_action="BISECT"
+		fi
+
+		if [ -n "$branch" ]; then
+			:
+		elif [ -h "$rev_parse_git_dir/HEAD" ]; then
+			branch="$(__promptor_function_git_command symbolic-ref HEAD 2>/dev/null)"
+		else
+			local head=""
+			case "$rev_parse_show_ref_format" in
+				files)
+					if ! __promptor_function_git_dir_read "HEAD" head; then
+						exec {fd_count_dirty}<&-
+						exec {fd_count_added}<&-
+						exec {fd_count_stash}<&-
+						exec {fd_count_untracked}<&-
+						exec {fd_count_upstream}<&-
+						return
+					fi
+					if [[ "$head" == "ref: "* ]]; then
+						head="${head#ref: }"
+					else
+						head=""
+					fi
+					;;
+				*)
+					head="$(__promptor_function_git_command symbolic-ref HEAD 2>/dev/null)"
+					;;
+			esac
+
+			if [ -z "$head" ]; then
+				detached=true
+				case "${promptor_config[git.describe.style]}" in
+					contains)
+						branch="$(__promptor_function_git_command describe --contains HEAD)";;
+					branch)
+						branch="$(__promptor_function_git_command describe --contains --all HEAD)";;
+					tag)
+						branch="$(__promptor_function_git_command describe --tags HEAD)";;
+					describe)
+						branch="$(__promptor_function_git_command describe HEAD)";;
+					*)
+						branch="$(__promptor_function_git_command describe --tags --exact-match HEAD)";;
+				esac
+				local detached_exit_code=$?
+				if [ $detached_exit_code -ne 0 ]; then
+					hashed=true
+					branch="$rev_parse_short..."
+				fi
+				branch="($branch)"
+			else
+				branch="$head"
+			fi
+		fi
+	fi
+
+	branch="${branch##refs/heads/}"
+
+	if [ -n "$rebase_num" ] && [ -n "$rebase_total" ]; then
+		rebase_action="$rebase_action $rebase_num/$rebase_total"
+	fi
+
+	local conflict=false
+	if [ -n "$(__promptor_function_git_command ls-files --unmerged 2>/dev/null)" ]; then
+		conflict=true
+	fi
+
+	local count_dirty=0
+	local count_added=0
+	local count_stash=0
+	local count_untracked=0
+	local count_upstream=""
+	local count_upstream_left=0
+	local count_upstream_right=0
+
+	if [ "$rev_parse_is_inside_work_tree" = true ]; then
+		builtin read -ru $fd_count_dirty count_dirty
+		builtin read -ru $fd_count_added count_added
+		builtin read -ru $fd_count_stash count_stash
+		builtin read -ru $fd_count_untracked count_untracked
+		builtin read -ru $fd_count_upstream count_upstream
+		exec {fd_count_dirty}<&-
+		exec {fd_count_added}<&-
+		exec {fd_count_stash}<&-
+		exec {fd_count_untracked}<&-
+		exec {fd_count_upstream}<&-
+		count_upstream_left="${count_upstream%	*}"
+		count_upstream_right="${count_upstream#*	}"
+	fi
+
+	local powerline=""
+	[ "${promptor_config[powerline]}" = true ] && powerline="powerline."
+	local character_dirty="${promptor_config[git.${powerline}character.dirty]}"
+	local character_added="${promptor_config[git.${powerline}character.added]}"
+	local character_untracked="${promptor_config[git.${powerline}character.untracked]}"
+	local character_stash="${promptor_config[git.${powerline}character.stash]}"
+	local character_upstream_left="${promptor_config[git.${powerline}character.upstream.left]}"
+	local character_upstream_right="${promptor_config[git.${powerline}character.upstream.right]}"
+	local character_stash="${promptor_config[git.${powerline}character.stash]}"
+	local character_branch="${promptor_config[git.${powerline}character.branch]}"
+	local character_tag="${promptor_config[git.${powerline}character.tag]}"
+	local character_hash="${promptor_config[git.${powerline}character.hash]}"
+	local character_separator="${promptor_config[git.${powerline}character.separator]}"
+	local character_separator_prompt="${promptor_config[git.${powerline}character.separator.prompt]}"
+	local character_separator_rprompt="${promptor_config[git.${powerline}character.separator.rprompt]}"
+
+	if [ "$prompt_side" = "rprompt" ]; then
+		character_separator_prompt="$character_separator_rprompt"
+	fi
+
+	local git_string=""
+
+	local information
+	for information in "${(z)promptor_config[git.information.sequence]}"; do
+		case "$information" in
+			dirty)
+				if [ "$count_dirty" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$count_dirty$character_dirty"
+				fi
+				;;
+			added)
+				if [ "$count_added" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$count_added$character_added"
+				fi
+				;;
+			untracked)
+				if [ "$count_untracked" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$count_untracked$character_untracked"
+				fi
+				;;
+			stash)
+				if [ "$count_stash" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$count_stash$character_stash"
+				fi
+				;;
+			upstream)
+				if [ "$count_upstream_left" -gt 0 ] && [ "$count_upstream_right" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$character_upstream_left$count_upstream_left$character_upstream_right$count_upstream_right"
+				elif [ "$count_upstream_left" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$character_upstream_left$count_upstream_left"
+				elif [ "$count_upstream_right" -gt 0 ]; then
+					[ -n "$git_string" ] && git_string="$git_string$character_separator"
+					git_string="$git_string$character_upstream_right$count_upstream_right"
+				fi
+				;;
+		esac
+	done
+
+	if [ "$rev_parse_is_inside_git_dir" = true ]; then
+		[ -n "$git_string" ] && git_string="$git_string $character_separator_prompt "
+		if [ "$rev_parse_is_bare_repository" = true ]; then
+			git_string="${git_string}BARE"
+		else
+			git_string="${git_string}.GIT"
+		fi
+	fi
+	if [ -n "$rebase_action" ]; then
+		[ -n "$git_string" ] && git_string="$git_string $character_separator_prompt "
+		git_string="$git_string$rebase_action"
+	fi
+	if [ "$conflict" = true ]; then
+		[ -n "$git_string" ] && git_string="$git_string $character_separator_prompt "
+		git_string="${git_string}CONFLICT"
+	fi
+	if [ "$sparse_checkout" = true ]; then
+		[ -n "$git_string" ] && git_string="$git_string $character_separator_prompt "
+		git_string="${git_string}SPARSE"
+	fi
+	if [ -n "$branch" ]; then
+		[ -n "$git_string" ] && git_string="$git_string $character_separator_prompt "
+		git_string="$git_string$branch"
+		if [ "$detached" = true ]; then
+			if [ "$hashed" = true ]; then
+				git_string="$git_string$character_hash"
+			else
+				git_string="$git_string$character_tag"
+			fi
+		else
+			git_string="$git_string $character_branch"
+		fi
+	fi
+
+	local color_git_bg="${promptor_config[git.color.bg]}"
+	local color_git_fg="${promptor_config[git.color.fg]}"
+
+	# check if color exists and variable name
+	local color
+	for color in "${(z)promptor_config[git.color.sequence]}"; do
+		case "$color" in
+			conflict)
+				if [ "$conflict" = true ] || [ "$rev_parse_is_inside_git_dir" = true ]; then
+					color_git_bg="${promptor_config[git.color.${color}.bg]}"
+					color_git_fg="${promptor_config[git.color.${color}.fg]}"
+					break
+				fi
+				;;
+			dirty)
+				if [ "$count_dirty" -gt 0 ]; then
+					color_git_bg="${promptor_config[git.color.${color}.bg]}"
+					color_git_fg="${promptor_config[git.color.${color}.fg]}"
+					break
+				fi
+				;;
+			added)
+				if [ "$count_added" -gt 0 ]; then
+					color_git_bg="${promptor_config[git.color.${color}.bg]}"
+					color_git_fg="${promptor_config[git.color.${color}.fg]}"
+					break
+				fi
+				;;
+			untracked)
+				if [ "$count_untracked" -gt 0 ]; then
+					color_git_bg="${promptor_config[git.color.${color}.bg]}"
+					color_git_fg="${promptor_config[git.color.${color}.fg]}"
+					break
+				fi
+				;;
+			detached)
+				if [ "$detached" = true ]; then
+					color_git_bg="${promptor_config[git.color.${color}.bg]}"
+					color_git_fg="${promptor_config[git.color.${color}.fg]}"
+					break
+				fi
+				;;
+			remote)
+				if [ "$count_upstream_left" -eq 0 ] && [ "$count_upstream_right" -eq 0 ]; then
+					color_git_bg="${promptor_config[git.color.${color}.bg]}"
+					color_git_fg="${promptor_config[git.color.${color}.fg]}"
+					break
+				fi
+				;;
+		esac
+	done
+
+	echo "${color_git_bg}" "${color_git_fg}" "${git_string}"
 }
-
-local current_branch=$(__promptor_function_git_command symbolic-ref --quiet HEAD 2> /dev/null)
-local ret=$?
-if [[ $ret != 0 ]]; then
-    [[ $ret == 128 ]] && return # no git repo.
-    current_branch=$(__promptor_function_git_command rev-parse --short HEAD 2> /dev/null) || return
-fi
-current_branch=${current_branch#refs/heads/}
-
-if [ -n "${current_branch}" ]; then
-    # font character
-    local branch_character=''
-    if ${promptor_config[powerline]}; then
-        branch_character=$' \ue0a0' &> /dev/null
-    fi
-    local color_git_bg=${promptor_config[git.bg]}
-    local color_git_fg=${promptor_config[git.fg]}
-    local count=''
-    if __promptor_function_git_command ls-files --others --exclude-standard \
-        --directory --no-empty-directory \
-        --error-unmatch -- ':/*' &>/dev/null ||
-        ! __promptor_function_git_command diff --no-ext-diff --quiet ||
-        ! __promptor_function_git_command diff --no-ext-diff --cached --quiet
-    then
-        color_git_bg=${promptor_config[git.commit.bg]}
-        color_git_fg=${promptor_config[git.commit.fg]}
-    elif count=$(__promptor_function_git_command rev-list --count HEAD...origin/HEAD) &>/dev/null
-    then
-        if [ "$count" = "0" ]; then
-            color_git_bg=${promptor_config[git.remote.bg]}
-            color_git_fg=${promptor_config[git.remote.fg]}
-        fi
-    elif count=$(__promptor_function_git_command rev-list --count "HEAD...origin/$current_branch") &>/dev/null
-    then
-        if [ "$count" = "0" ]; then
-            color_git_bg=${promptor_config[git.remote.bg]}
-            color_git_fg=${promptor_config[git.remote.fg]}
-        fi
-    fi
-
-    echo ${color_git_bg} ${color_git_fg} "${current_branch:gs/%/%%}${branch_character}"
-fi
