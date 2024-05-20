@@ -1,9 +1,7 @@
 # default configuration
-promptor_config+=(
-	[example.bg]=231
-	[example.fg]=232
-	[example.value]="foo bar"
-)
+promptor_config[example.bg]=231
+promptor_config[example.fg]=232
+promptor_config[example.value]="foo bar"
 
 # call by end of __my_example_slow_function (not required)
 __my_example_callback() {

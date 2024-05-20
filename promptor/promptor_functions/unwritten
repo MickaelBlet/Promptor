@@ -1,8 +1,6 @@
 # default config
-promptor_config+=(
-	[unwritten.bg]=124
-	[unwritten.fg]=231
-)
+promptor_config[unwritten.bg]=124
+promptor_config[unwritten.fg]=231
 
 # must be prefix by promptor_function_
 promptor_function_unwritten() {

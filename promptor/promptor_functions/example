@@ -1,9 +1,7 @@
 # default configuration
-promptor_config+=(
-	[example.bg]=231
-	[example.fg]=232
-	[example.value]="foo bar"
-)
+promptor_config[example.bg]=231
+promptor_config[example.fg]=232
+promptor_config[example.value]="foo bar"
 
 # must be prefix by promptor_function_
 promptor_function_example() {

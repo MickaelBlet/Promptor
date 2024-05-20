@@ -1,9 +1,7 @@
 # default config
-promptor_config+=(
-	[git.async.wait.bg]="238"
-	[git.async.wait.fg]="231"
-	[git.async.wait.character]="\uf250"
-)
+promptor_config[git.async.wait.bg]="238"
+promptor_config[git.async.wait.fg]="231"
+promptor_config[git.async.wait.character]="\uf250"
 
 # last git async result
 __promptor_old_git_prompt=""

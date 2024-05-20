@@ -44,13 +44,11 @@ builtin autoload -Uz add-zsh-hook
 builtin declare -A promptor_config
 
 # default configuration
-promptor_config=(
-	[powerline]=true
-	[prompt]="[\ue0b6]237 231 %~ [\ue0b0] unwritten [\ue0b0] exit_code [\ue0b0]"
-	[rprompt]="[\ue0b2] git_async [\ue0b2] 25 231 %n@%m [\ue0b2] 237 231 %D{%H:%M}[\ue0b4]"
-	[title.command.max_size]=100
-	[title]="%n: %~"
-)
+promptor_config[powerline]=true
+promptor_config[prompt]="[\ue0b6]237 231 %~ [\ue0b0] unwritten [\ue0b0] exit_code [\ue0b0]"
+promptor_config[rprompt]="[\ue0b2] git_async [\ue0b2] 25 231 %n@%m [\ue0b2] 237 231 %D{%H:%M}[\ue0b4]"
+promptor_config[title.command.max_size]=100
+promptor_config[title]="%n: %~"
 # actions of prompt
 __promptor_prompt_actions=()
 __promptor_rprompt_actions=()
@@ -96,7 +94,7 @@ __promptor_load_config_file() {
 __promptor_update_config_file() {
 	# create default key if not exists
 	for key in "${(@k)promptor_config}"; do
-		if ! [[ "$key" =~ "default."* ]] && ! [[ -v promptor_config[default.$key] ]]; then
+		if ! [[ "$key" =~ "default."* ]] && ! [ "${promptor_config[default.$key]+abracadabra}" ]; then
 			promptor_config[default.$key]="${promptor_config[$key]}"
 		fi
 	done
@@ -195,82 +193,103 @@ __promptor_compile_prompts() {
 	__promptor_prompt_workers=()
 	__promptor_rprompt_workers=()
 
+	__promptor_split_prompt() {
+		builtin local array_name="$1"
+		builtin local prompt="$2"
+		builtin local left
+		builtin local right
+		builtin local in_bracket
+		builtin local ret_array
+		builtin local i=0
+		ret_array=()
+		while [[ "$prompt" =~ '\[' ]]; do
+			right="${prompt##*\[}"
+			left="${prompt%\[*}"
+			if [ -n "$right" ]; then
+				in_bracket="[${right%\]*}]"
+				right="${right#*\]}"
+				if [ -n "$right" ]; then
+					ret_array=("${right}" "${ret_array[@]}")
+				fi
+				ret_array=("${in_bracket}" "${ret_array[@]}")
+			fi
+			prompt="${left}"
+			i=$((i + 1))
+			if [ $i -gt 20 ]; then
+				break
+			fi
+		done
+		if [ -n "$prompt" ]; then
+			ret_array=("${prompt}" "${ret_array[@]}")
+		fi
+		eval $array_name'=("$ret_array[@]")'
+	}
+
 	__promptor_parse_prompt() {
 		builtin local prompt_name="$1"
+		builtin local prompt_steps
 		builtin local prompt_step
 		builtin local function_name
 		builtin local prefix
 		builtin local suffix
 		builtin local args
-		if builtin echo -en "${promptor_config[${prompt_name}]}" | grep -zo '\([^[]*\|\[[^]]*\]\)' &> /dev/null; then
-			builtin echo -en "${promptor_config[${prompt_name}]}" | grep -zo '\([^[]*\|\[[^]]*\]\)' |
-			while IFS='' builtin read -d $'\0' prompt_step; do
-				function_name="$(builtin echo -e "$prompt_step" | sed 's/^\s*\([_[:alnum:]]\+\)\s*/\1/')"
-				# check if worker exists
-				if builtin typeset -f "__promptor_worker_$function_name" > /dev/null; then
-					# prepare to launch worker with prompt argument
-					if [ "$prompt_name" = "prompt" ]; then
-						__promptor_prompt_workers=($__promptor_prompt_workers "__promptor_worker_$function_name '${prompt_name}'")
-					else
-						__promptor_rprompt_workers=($__promptor_rprompt_workers "__promptor_worker_$function_name '${prompt_name}'")
-					fi
+		__promptor_split_prompt "prompt_steps" "${promptor_config[${prompt_name}]}"
+		for prompt_step in "${prompt_steps[@]}"; do
+			function_name="$(builtin echo -e "$prompt_step" | sed 's/^\s*\([_[:alnum:]]\+\)\s*/\1/')"
+			# check if worker exists
+			if builtin typeset -f "__promptor_worker_$function_name" > /dev/null; then
+				# prepare to launch worker with prompt argument
+				if [ "$prompt_name" = "prompt" ]; then
+					__promptor_prompt_workers=($__promptor_prompt_workers "__promptor_worker_$function_name '${prompt_name}'")
+				else
+					__promptor_rprompt_workers=($__promptor_rprompt_workers "__promptor_worker_$function_name '${prompt_name}'")
 				fi
-				# check if function exist
-				if builtin typeset -f "__promptor_function_$function_name" > /dev/null; then
-					prefix="$(builtin echo -e "$prompt_step" | sed 's/^\(\s*\)[_[:alnum:]]\+\s*/\1/')"
-					suffix="$(builtin echo -e "$prompt_step" | sed 's/^\s*[_[:alnum:]]\+\(\s*\)/\1/')"
+			fi
+			# check if function exist
+			if builtin typeset -f "__promptor_function_$function_name" > /dev/null; then
+				prefix="$(builtin echo -e "$prompt_step" | sed 's/^\(\s*\)[_[:alnum:]]\+\s*/\1/')"
+				suffix="$(builtin echo -e "$prompt_step" | sed 's/^\s*[_[:alnum:]]\+\(\s*\)/\1/')"
+				if [ "$prompt_name" = "prompt" ]; then
+					__promptor_prompt_actions=($__promptor_prompt_actions "
+						builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
+						[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
+					")
+				else
+					__promptor_rprompt_actions=($__promptor_rprompt_actions "
+						builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
+						[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
+					")
+				fi
+			else
+				# section with background and foreground and other...
+				if builtin echo -e "$prompt_step" | tr '\n' '\r' | grep '^\s*[0-9]\+\s\+[0-9]\+\s.*' &> /dev/null; then
+					prefix="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\(\s*\)[0-9]\+\s\+[0-9]\+\s.*/\1/')"
+					suffix="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+[0-9]\+\s.*\(\s*\)$/\1/')"
+					bg="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*\([0-9]\+\)\s\+[0-9]\+\s.*/\1/')"
+					fg="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+\([0-9]\+\)\s.*/\1/')"
+					args="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+[0-9]\+\s\(.*\)\s*$/\1/' | tr '\r' '\n')"
 					if [ "$prompt_name" = "prompt" ]; then
 						__promptor_prompt_actions=($__promptor_prompt_actions "
-							builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
-							[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
+							builtin set -- '$bg' '$fg' $'$prefix$args$suffix'
 						")
 					else
 						__promptor_rprompt_actions=($__promptor_rprompt_actions "
-							builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
-							[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
+							builtin set -- '$bg' '$fg' $'$prefix$args$suffix'
 						")
 					fi
 				else
-					# section with background and foreground and other...
-					if builtin echo -e "$prompt_step" | tr '\n' '\r' | grep '^\s*[0-9]\+\s\+[0-9]\+\s.*' &> /dev/null; then
-						prefix="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\(\s*\)[0-9]\+\s\+[0-9]\+\s.*/\1/')"
-						suffix="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+[0-9]\+\s.*\(\s*\)$/\1/')"
-						bg="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*\([0-9]\+\)\s\+[0-9]\+\s.*/\1/')"
-						fg="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+\([0-9]\+\)\s.*/\1/')"
-						args="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+[0-9]\+\s\(.*\)\s*$/\1/' | tr '\r' '\n')"
-						if [ "$prompt_name" = "prompt" ]; then
-							__promptor_prompt_actions=($__promptor_prompt_actions "
-								builtin set -- '$bg' '$fg' '$prefix$args$suffix'
-							")
-						else
-							__promptor_rprompt_actions=($__promptor_rprompt_actions "
-								builtin set -- '$bg' '$fg' '$prefix$args$suffix'
-							")
-						fi
+					if [ "$prompt_name" = "prompt" ]; then
+						__promptor_prompt_actions=($__promptor_prompt_actions "
+							builtin set -- $'${prompt_step}'
+						")
 					else
-						if [ "$prompt_name" = "prompt" ]; then
-							__promptor_prompt_actions=($__promptor_prompt_actions "
-								builtin set -- '${prompt_step}'
-							")
-						else
-							__promptor_rprompt_actions=($__promptor_rprompt_actions "
-								builtin set -- '${prompt_step}'
-							")
-						fi
+						__promptor_rprompt_actions=($__promptor_rprompt_actions "
+							builtin set -- $'${prompt_step}'
+						")
 					fi
 				fi
-			done
-		else
-			if [ "$prompt_name" = "prompt" ]; then
-				__promptor_prompt_actions=($__promptor_prompt_actions "
-					builtin set -- '${promptor_config[$prompt_name]}'
-				")
-			else
-				__promptor_rprompt_actions=($__promptor_rprompt_actions "
-					builtin set -- '${promptor_config[$prompt_name]}'
-				")
 			fi
-		fi
+		done
 	}
 	__promptor_parse_prompt "prompt"
 	__promptor_parse_prompt "rprompt"
@@ -292,19 +311,19 @@ __promptor_load_functions() {
 	done
 	# rename function to private
 	for function_name in $(typeset +mf "promptor_function_*"); do
-		functions -c $function_name __$function_name
+		builtin eval "$(builtin echo "__$function_name() {"; whence -f "$function_name" | tail -n +2)"
 		unfunction $function_name
 	done
 	# rename worker to private
 	for worker_name in $(typeset +mf "promptor_worker_*"); do
-		functions -c $worker_name __$worker_name
+		eval "$(builtin echo "__$worker_name()  {"; whence -f "$worker_name" | tail -n +2)"
 		unfunction $worker_name
 		# if function exists with worker
 		if builtin typeset -f "__promptor_function_${worker_name#promptor_worker_}" > /dev/null; then
-			functions -c __promptor_function_${worker_name#promptor_worker_} __promptor_function_${worker_name#promptor_worker_}_default
+			builtin eval "$(echo "__promptor_function_${worker_name#promptor_worker_}_default() {"; whence -f "__promptor_function_${worker_name#promptor_worker_}" | tail -n +2)"
 		else
 			# create empty function
-			eval "
+			builtin eval "
 				__promptor_function_${worker_name#promptor_worker_}(){}
 				__promptor_function_${worker_name#promptor_worker_}_default(){}
 			"
@@ -325,7 +344,7 @@ promptor_launch_worker_job() {
 
 	if [ -z "$callback" ]; then
 		callback="__promptor_worker_${function_name}_callback_default"
-		eval "
+		builtin eval "
 			$callback() {
 				promptor_reload_prompt_from_function \"${function_name}\" \"\$2\"
 			}
@@ -333,7 +352,7 @@ promptor_launch_worker_job() {
 	fi
 
 	# create function of worker
-	eval "
+	builtin eval "
 		__promptor_worker_${function_name}_callback_${prompt}() {
 			${callback} \"${prompt}\" \"\$3\"
 			async_stop_worker \"$worker_name\" -n
@@ -440,7 +459,7 @@ __promptor_launch_workers() {
 	builtin local function_name
 	for function_name in $(typeset +mf "__promptor_function_*_default"); do
 		# replace by default function
-		functions -c "$function_name" "${function_name%_default}"
+		builtin eval "$(builtin echo "${function_name%_default}() {"; whence -f "$function_name" | tail -n +2)"
 	done
 	builtin local worker
 	for worker in "${__promptor_prompt_workers[@]}"; do

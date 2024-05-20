@@ -1,8 +1,6 @@
 # default config
-promptor_config+=(
-	[exit_code.bg]=125
-	[exit_code.fg]=231
-)
+promptor_config[exit_code.bg]=125
+promptor_config[exit_code.fg]=231
 
 # must be prefix by promptor_function_
 promptor_function_exit_code() {

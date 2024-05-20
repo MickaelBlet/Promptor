@@ -81,11 +81,10 @@ You can change or disable information piority sequence with: `promptor_config::g
 ~/.zshrc.d/promptor/promptor_functions/example
 ``` bash
 # default configuration
-promptor_config+=(
-    [example.bg]=231
-    [example.fg]=232
-    [example.value]="foo bar"
-)
+promptor_config[example.bg]=231
+promptor_config[example.fg]=232
+promptor_config[example.value]="foo bar"
+
 # must be prefix by promptor_function_
 promptor_function_example() {
     local prompt="$1"
@@ -109,11 +108,9 @@ Create automaticaly the manage function configurations:
 ~/.zshrc.d/promptor/promptor_functions/example_async
 ``` bash
 # default configuration
-promptor_config+=(
-    [example.bg]=231
-    [example.fg]=232
-    [example.value]="foo bar"
-)
+promptor_config[example.bg]=231
+promptor_config[example.fg]=232
+promptor_config[example.value]="foo bar"
 
 # call by end of __my_example_slow_function (not required)
 __my_example_callback() {

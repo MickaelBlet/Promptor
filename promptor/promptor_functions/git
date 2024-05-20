@@ -1,77 +1,75 @@
 # default config
-promptor_config+=(
-	[git]=true
-	# color
-	[git.color.bg]=240
-	[git.color.fg]=231
-	[git.color.conflict.bg]=124
-	[git.color.conflict.fg]=231
-	[git.color.dirty.bg]=226
-	[git.color.dirty.fg]=232
-	[git.color.added.bg]=207
-	[git.color.added.fg]=232
-	[git.color.untracked.bg]=214
-	[git.color.untracked.fg]=232
-	[git.color.detached.bg]=97
-	[git.color.detached.fg]=231
-	[git.color.remote.bg]=118
-	[git.color.remote.fg]=232
-	# color sequence list:
-	# - conflict
-	# - dirty
-	# - added
-	# - untracked
-	# - detached
-	# - remote
-	[git.color.sequence]="conflict dirty added untracked detached remote"
-	[git.hide_if_pwd_ignored]=false
-	[git.compress.sparse.state]=true
-	[git.omit.sparse.state]=true
-	# information sequence list:
-	# - dirty
-	# - added
-	# - untracked
-	# - stash
-	# - upstream
-	[git.information.sequence]="dirty added untracked stash upstream"
-	# git describe branch or tag or ...
-	# - contains
-	# - branch
-	# - tag
-	# - describe
-	# - *
-	[git.describe.style]="tag"
-	# show upstream options list:
-	# - git | svn  choose your repo type
-	# - verbose    show number up or down stream
-	# - legacy     use legacy command
-	# - name       show the name of bramch or commit
-	[git.show.upstream]="verbose"
-	[git.character.dirty]="M"
-	[git.character.added]="A"
-	[git.character.untracked]="U"
-	[git.character.stash]="S"
-	[git.character.upstream.left]="\u2b63"
-	[git.character.upstream.right]="\u2b61"
-	[git.character.branch]="\u26d5"
-	[git.character.tag]="\uf02b"
-	[git.character.hash]="\u2d4c"
-	[git.character.separator]="\u2502"
-	[git.character.separator.prompt]="\u2503"
-	[git.character.separator.rprompt]="\u2503"
-	[git.powerline.character.dirty]="M"
-	[git.powerline.character.added]="A"
-	[git.powerline.character.untracked]="U"
-	[git.powerline.character.stash]="S"
-	[git.powerline.character.upstream.left]="\u2b63"
-	[git.powerline.character.upstream.right]="\u2b61"
-	[git.powerline.character.branch]="\ue0a0"
-	[git.powerline.character.tag]="\uf02b"
-	[git.powerline.character.hash]="\u2d4c"
-	[git.powerline.character.separator]="\u2502"
-	[git.powerline.character.separator.prompt]="\ue0b1"
-	[git.powerline.character.separator.rprompt]="\ue0b3"
-)
+promptor_config[git]=true
+# color
+promptor_config[git.color.bg]=240
+promptor_config[git.color.fg]=231
+promptor_config[git.color.conflict.bg]=124
+promptor_config[git.color.conflict.fg]=231
+promptor_config[git.color.dirty.bg]=226
+promptor_config[git.color.dirty.fg]=232
+promptor_config[git.color.added.bg]=207
+promptor_config[git.color.added.fg]=232
+promptor_config[git.color.untracked.bg]=214
+promptor_config[git.color.untracked.fg]=232
+promptor_config[git.color.detached.bg]=97
+promptor_config[git.color.detached.fg]=231
+promptor_config[git.color.remote.bg]=118
+promptor_config[git.color.remote.fg]=232
+# color sequence list:
+# - conflict
+# - dirty
+# - added
+# - untracked
+# - detached
+# - remote
+promptor_config[git.color.sequence]="conflict dirty added untracked detached remote"
+promptor_config[git.hide_if_pwd_ignored]=false
+promptor_config[git.compress.sparse.state]=true
+promptor_config[git.omit.sparse.state]=true
+# information sequence list:
+# - dirty
+# - added
+# - untracked
+# - stash
+# - upstream
+promptor_config[git.information.sequence]="dirty added untracked stash upstream"
+# git describe branch or tag or ...
+# - contains
+# - branch
+# - tag
+# - describe
+# - *
+promptor_config[git.describe.style]="tag"
+# show upstream options list:
+# - git | svn  choose your repo type
+# - verbose    show number up or down stream
+# - legacy     use legacy command
+# - name       show the name of bramch or commit
+promptor_config[git.show.upstream]="verbose"
+promptor_config[git.character.dirty]="M"
+promptor_config[git.character.added]="A"
+promptor_config[git.character.untracked]="U"
+promptor_config[git.character.stash]="S"
+promptor_config[git.character.upstream.left]="\u2b63"
+promptor_config[git.character.upstream.right]="\u2b61"
+promptor_config[git.character.branch]="\u26d5"
+promptor_config[git.character.tag]="\uf02b"
+promptor_config[git.character.hash]="\u2d4c"
+promptor_config[git.character.separator]="\u2502"
+promptor_config[git.character.separator.prompt]="\u2503"
+promptor_config[git.character.separator.rprompt]="\u2503"
+promptor_config[git.powerline.character.dirty]="M"
+promptor_config[git.powerline.character.added]="A"
+promptor_config[git.powerline.character.untracked]="U"
+promptor_config[git.powerline.character.stash]="S"
+promptor_config[git.powerline.character.upstream.left]="\u2b63"
+promptor_config[git.powerline.character.upstream.right]="\u2b61"
+promptor_config[git.powerline.character.branch]="\ue0a0"
+promptor_config[git.powerline.character.tag]="\uf02b"
+promptor_config[git.powerline.character.hash]="\u2d4c"
+promptor_config[git.powerline.character.separator]="\u2502"
+promptor_config[git.powerline.character.separator.prompt]="\ue0b1"
+promptor_config[git.powerline.character.separator.rprompt]="\ue0b3"
 
 # must be prefix by promptor_function_
 promptor_function_git() {
