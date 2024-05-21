@@ -33,7 +33,7 @@ readonly __PROMPTOR_PATH="${0:a}"
 # async
 if (( ! ${+functions[async_init]} )); then
 	# shellcheck source=./lib/async.zsh
-	source "${0:A:h}/lib/async.zsh" && async_init
+	builtin source "${0:A:h}/lib/async.zsh" && async_init
 fi
 
 builtin autoload -Uz add-zsh-hook
@@ -80,7 +80,7 @@ __promptor_load_config_file() {
 	builtin local config_array
 	builtin eval "
 		config_array=(
-			$(cat "$__PROMPTOR_CONFIG_PATH")
+			$(<"$__PROMPTOR_CONFIG_PATH")
 		)
 	"
 	builtin local line key value
@@ -92,33 +92,33 @@ __promptor_load_config_file() {
 }
 
 __promptor_update_config_file() {
+	builtin local content=""
 	# create default key if not exists
 	for key in "${(@k)promptor_config}"; do
 		if ! [[ "$key" =~ "default."* ]] && ! [ "${promptor_config[default.$key]+abracadabra}" ]; then
 			promptor_config[default.$key]="${promptor_config[$key]}"
 		fi
 	done
-	# reset old config file
-	builtin printf "" > "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# You can edit this file!" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# Execute 'promptor_reload' for take your change(s)" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# ----------------------------------------" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# VALUES" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# ----------------------------------------" >> "$__PROMPTOR_CONFIG_PATH"
+	content+="# You can edit this file!\n"
+	content+="# Execute 'promptor_reload' for take your change(s)\n"
+	content+="\n"
+	content+="# ----------------------------------------\n"
+	content+="# VALUES\n"
+	content+="# ----------------------------------------\n"
 	for key in "${(@ko)promptor_config}"; do
 		if ! [[ "$key" =~ "default."* ]]; then
-			builtin printf "%s='%s'\n" "$key" "${promptor_config[${key}]}" >> "$__PROMPTOR_CONFIG_PATH"
+			content+="$key='${promptor_config[${key}]//\\/\\\\}'\n"
 		fi
 	done
-	builtin echo "# ----------------------------------------" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# DEFAULTS" >> "$__PROMPTOR_CONFIG_PATH"
-	builtin echo "# ----------------------------------------" >> "$__PROMPTOR_CONFIG_PATH"
+	content+="# ----------------------------------------\n"
+	content+="# DEFAULTS\n"
+	content+="# ----------------------------------------\n"
 	for key in "${(@ko)promptor_config}"; do
 		if [[ "$key" =~ "default."* ]]; then
-			builtin printf "%s='%s'\n" "$key" "${promptor_config[${key}]}" >> "$__PROMPTOR_CONFIG_PATH"
+			content+="$key='${promptor_config[${key}]//\\/\\\\}'\n"
 		fi
 	done
+	builtin echo -e "$content" > "$__PROMPTOR_CONFIG_PATH"
 }
 
 __promptor_create_config_functions() {
@@ -147,41 +147,41 @@ New value    : \" -c reply
 __promptor_compile_prompts() {
 	if [ "${promptor_config[powerline]}" = true ]; then
 		__promptor_left_characters=(
-			"$(builtin echo -en "\ue0b0" 2> /dev/null)" # arrow.fill.left
-			"$(builtin echo -en "\ue0b1" 2> /dev/null)" # arrow.left
-			"$(builtin echo -en "\ue0b4" 2> /dev/null)" # curvy.fill.left
-			"$(builtin echo -en "\ue0b5" 2> /dev/null)" # curvy.left
-			"$(builtin echo -en "\ue0b8" 2> /dev/null)" # angly_down.fill.left
-			"$(builtin echo -en "\ue0b9" 2> /dev/null)" # angly_down.left
-			"$(builtin echo -en "\ue0bc" 2> /dev/null)" # angly_up.fill.left
-			"$(builtin echo -en "\ue0bd" 2> /dev/null)" # angly_up.left
-			"$(builtin echo -en "\ue0c0" 2> /dev/null)" # flame.fill.left
-			"$(builtin echo -en "\ue0c1" 2> /dev/null)" # flame.left
-			"$(builtin echo -en "\ue0c4" 2> /dev/null)" # pixel.left
-			"$(builtin echo -en "\ue0c6" 2> /dev/null)" # big_pixel.left
-			"$(builtin echo -en "\ue0c8" 2> /dev/null)" # signal.left
-			"$(builtin echo -en "\ue0cc" 2> /dev/null)" # hexagon.fill.left
-			"$(builtin echo -en "\ue0cd" 2> /dev/null)" # hexagon.left
-			"$(builtin echo -en "\ue0ce" 2> /dev/null)" # lego.fill.left
-			"$(builtin echo -en "\ue0cf" 2> /dev/null)" # lego.fill.up
-			"$(builtin echo -en "\ue0d1" 2> /dev/null)" # lego.fill.left.side
-			"$(builtin echo -en "\ue0d2" 2> /dev/null)" # bracket.fill.left
+			$'\ue0b0' # arrow.fill.left
+			$'\ue0b1' # arrow.left
+			$'\ue0b4' # curvy.fill.left
+			$'\ue0b5' # curvy.left
+			$'\ue0b8' # angly_down.fill.left
+			$'\ue0b9' # angly_down.left
+			$'\ue0bc' # angly_up.fill.left
+			$'\ue0bd' # angly_up.left
+			$'\ue0c0' # flame.fill.left
+			$'\ue0c1' # flame.left
+			$'\ue0c4' # pixel.left
+			$'\ue0c6' # big_pixel.left
+			$'\ue0c8' # signal.left
+			$'\ue0cc' # hexagon.fill.left
+			$'\ue0cd' # hexagon.left
+			$'\ue0ce' # lego.fill.left
+			$'\ue0cf' # lego.fill.up
+			$'\ue0d1' # lego.fill.left.side
+			$'\ue0d2' # bracket.fill.left
 		)
 		__promptor_right_characters=(
-			"$(builtin echo -en "\ue0b3" 2> /dev/null)" # arrow.right
-			"$(builtin echo -en "\ue0b6" 2> /dev/null)" # curvy.fill.right
-			"$(builtin echo -en "\ue0b7" 2> /dev/null)" # curvy.right
-			"$(builtin echo -en "\ue0ba" 2> /dev/null)" # angly_down.fill.right
-			"$(builtin echo -en "\ue0bb" 2> /dev/null)" # angly_down.right
-			"$(builtin echo -en "\ue0be" 2> /dev/null)" # angly_up.fill.right
-			"$(builtin echo -en "\ue0bf" 2> /dev/null)" # angly_up.right
-			"$(builtin echo -en "\ue0c2" 2> /dev/null)" # flame.fill.right
-			"$(builtin echo -en "\ue0c3" 2> /dev/null)" # flame.right
-			"$(builtin echo -en "\ue0c5" 2> /dev/null)" # pixel.right
-			"$(builtin echo -en "\ue0c7" 2> /dev/null)" # big_pixel.right
-			"$(builtin echo -en "\ue0ca" 2> /dev/null)" # signal.right
-			"$(builtin echo -en "\ue0d4" 2> /dev/null)" # bracket.fill.right
-			"$(builtin echo -en "\ue0b2" 2> /dev/null)" # arrow.fill.right
+			$'\ue0b3' # arrow.right
+			$'\ue0b6' # curvy.fill.right
+			$'\ue0b7' # curvy.right
+			$'\ue0ba' # angly_down.fill.right
+			$'\ue0bb' # angly_down.right
+			$'\ue0be' # angly_up.fill.right
+			$'\ue0bf' # angly_up.right
+			$'\ue0c2' # flame.fill.right
+			$'\ue0c3' # flame.right
+			$'\ue0c5' # pixel.right
+			$'\ue0c7' # big_pixel.right
+			$'\ue0ca' # signal.right
+			$'\ue0d4' # bracket.fill.right
+			$'\ue0b2' # arrow.fill.right
 		)
 	else
 		__promptor_left_characters=()
@@ -235,46 +235,61 @@ __promptor_compile_prompts() {
 		builtin local args
 		__promptor_split_prompt "prompt_steps" "${promptor_config[${prompt_name}]}"
 		for prompt_step in "${prompt_steps[@]}"; do
-			function_name="$(builtin echo -e "$prompt_step" | sed 's/^\s*\([_[:alnum:]]\+\)\s*/\1/')"
-			# check if worker exists
-			if builtin typeset -f "__promptor_worker_$function_name" > /dev/null; then
-				# prepare to launch worker with prompt argument
-				if [ "$prompt_name" = "prompt" ]; then
-					__promptor_prompt_workers=($__promptor_prompt_workers "__promptor_worker_$function_name '${prompt_name}'")
-				else
-					__promptor_rprompt_workers=($__promptor_rprompt_workers "__promptor_worker_$function_name '${prompt_name}'")
+			if [[ "$prompt_step" =~ '^\s*[_[:alnum:]]+\s*$' ]]; then
+				prefix="${prompt_step%%[_[:alnum:]]*}"
+				suffix="${prompt_step:${#prefix}}"
+				function_name="${suffix%%[[:blank:]]*}"
+				suffix="${suffix:${#function_name}}"
+				# check if worker exists
+				if builtin typeset -f "__promptor_worker_$function_name" > /dev/null; then
+					# prepare to launch worker with prompt argument
+					if [ "$prompt_name" = "prompt" ]; then
+						__promptor_prompt_workers=($__promptor_prompt_workers "__promptor_worker_$function_name '${prompt_name}'")
+					else
+						__promptor_rprompt_workers=($__promptor_rprompt_workers "__promptor_worker_$function_name '${prompt_name}'")
+					fi
 				fi
-			fi
-			# check if function exist
-			if builtin typeset -f "__promptor_function_$function_name" > /dev/null; then
-				prefix="$(builtin echo -e "$prompt_step" | sed 's/^\(\s*\)[_[:alnum:]]\+\s*/\1/')"
-				suffix="$(builtin echo -e "$prompt_step" | sed 's/^\s*[_[:alnum:]]\+\(\s*\)/\1/')"
-				if [ "$prompt_name" = "prompt" ]; then
-					__promptor_prompt_actions=($__promptor_prompt_actions "
-						builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
-						[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
-					")
-				else
-					__promptor_rprompt_actions=($__promptor_rprompt_actions "
-						builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
-						[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
-					")
-				fi
-			else
-				# section with background and foreground and other...
-				if builtin echo -e "$prompt_step" | tr '\n' '\r' | grep '^\s*[0-9]\+\s\+[0-9]\+\s.*' &> /dev/null; then
-					prefix="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\(\s*\)[0-9]\+\s\+[0-9]\+\s.*/\1/')"
-					suffix="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+[0-9]\+\s.*\(\s*\)$/\1/')"
-					bg="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*\([0-9]\+\)\s\+[0-9]\+\s.*/\1/')"
-					fg="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+\([0-9]\+\)\s.*/\1/')"
-					args="$(builtin echo -e "$prompt_step" | tr '\n' '\r' | sed 's/^\s*[0-9]\+\s\+[0-9]\+\s\(.*\)\s*$/\1/' | tr '\r' '\n')"
+				# check if function exist
+				if builtin typeset -f "__promptor_function_$function_name" > /dev/null; then
 					if [ "$prompt_name" = "prompt" ]; then
 						__promptor_prompt_actions=($__promptor_prompt_actions "
-							builtin set -- '$bg' '$fg' $'$prefix$args$suffix'
+							builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
+							[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
 						")
 					else
 						__promptor_rprompt_actions=($__promptor_rprompt_actions "
-							builtin set -- '$bg' '$fg' $'$prefix$args$suffix'
+							builtin set -- \$(__promptor_function_${function_name} '${prompt_name}')
+							[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
+						")
+					fi
+				else
+					if [ "$prompt_name" = "prompt" ]; then
+						__promptor_prompt_actions=($__promptor_prompt_actions "
+							builtin set -- $'${prompt_step}'
+						")
+					else
+						__promptor_rprompt_actions=($__promptor_rprompt_actions "
+							builtin set -- $'${prompt_step}'
+						")
+					fi
+				fi
+			else
+				# section with background and foreground and other...
+				if [[ "$prompt_step" =~ '^\s*[-0-9]+\s+[-0-9]+\s.*$' ]]; then
+					prefix="${prompt_step%%[-0-9]*}"
+					prompt_step="${prompt_step:${#prefix}}"
+					bg="${prompt_step%%[[:blank:]]*}"
+					prompt_step="${prompt_step#*[[:blank:]]}"
+					fg="${prompt_step%%[[:blank:]]*}"
+					prompt_step="${prompt_step#*[[:blank:]]}"
+					args="${prompt_step}"
+					if [ "$prompt_name" = "prompt" ]; then
+						__promptor_prompt_actions=($__promptor_prompt_actions "
+							builtin set -- '$bg' '$fg' $'$prefix$args'
+						")
+					else
+						__promptor_rprompt_actions=($__promptor_rprompt_actions "
+							builtin set -- '$bg' '$fg' $'$prefix$args'
 						")
 					fi
 				else
@@ -301,26 +316,30 @@ __promptor_compile_prompts() {
 __promptor_load_functions() {
 	builtin local function_file
 	builtin local function_name
+	builtin local content
 	builtin local worker_name
 	builtin local key
 	builtin local value
 	# load functions
 	for function_file in "$__PROMPTOR_FUNCS_DIR/"*; do
 		# source function file
-		source "$function_file"
+		builtin source "$function_file"
 	done
 	# rename function to private
-	for function_name in $(typeset +mf "promptor_function_*"); do
-		builtin eval "$(builtin echo "__$function_name() {"; whence -f "$function_name" | tail -n +2)"
+	for function_name in $(builtin typeset +mf "promptor_function_*"); do
+		content="$(builtin type -f "$function_name")"
+		builtin eval "__$function_name${content:${#function_name}}"
 		unfunction $function_name
 	done
 	# rename worker to private
-	for worker_name in $(typeset +mf "promptor_worker_*"); do
-		eval "$(builtin echo "__$worker_name()  {"; whence -f "$worker_name" | tail -n +2)"
+	for worker_name in $(builtin typeset +mf "promptor_worker_*"); do
+		content="$(builtin type -f "$worker_name")"
+		builtin eval "__$worker_name${content:${#worker_name}}"
 		unfunction $worker_name
 		# if function exists with worker
 		if builtin typeset -f "__promptor_function_${worker_name#promptor_worker_}" > /dev/null; then
-			builtin eval "$(echo "__promptor_function_${worker_name#promptor_worker_}_default() {"; whence -f "__promptor_function_${worker_name#promptor_worker_}" | tail -n +2)"
+			content="$(builtin type -f "__promptor_function_${worker_name#promptor_worker_}")"
+			builtin eval "__promptor_function_${worker_name#promptor_worker_}_default${content:$((${#worker_name}+4))}"
 		else
 			# create empty function
 			builtin eval "
@@ -457,9 +476,11 @@ __promptor_print_title() {
 
 __promptor_launch_workers() {
 	builtin local function_name
-	for function_name in $(typeset +mf "__promptor_function_*_default"); do
+	builtin local function_content
+	for function_name in $(builtin typeset +mf "__promptor_function_*_default"); do
 		# replace by default function
-		builtin eval "$(builtin echo "${function_name%_default}() {"; whence -f "$function_name" | tail -n +2)"
+		function_content="$(builtin type -f "$function_name")"
+		builtin eval "${function_name%_default}${function_content:${#function_name}}"
 	done
 	builtin local worker
 	for worker in "${__promptor_prompt_workers[@]}"; do
@@ -505,29 +526,29 @@ __promptor_print_prompts() {
 		elif [ $# -gt 2 ]; then
 			if [ -n "$__next_character" ]; then
 				if (( $__promptor_right_characters[(Ie)${__next_character}] )); then
-					_prompt+=$'%{\033[38;5;'$1$'m%}'
+					[ "$1" -ne -1 ] && _prompt+=$'%{\033[38;5;'$1$'m%}'
 					_prompt+="${__next_character}"
-					_prompt+=$'%{\033[48;5;'$1$'m%}'
-					_prompt+=$'%{\033[38;5;'$2$'m%}'
+					[ "$1" -ne -1 ] &&_prompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$2" -ne -1 ] &&_prompt+=$'%{\033[38;5;'$2$'m%}'
 				elif (( $__promptor_left_characters[(Ie)${__next_character}] )); then
-					_prompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$1" -ne -1 ] && _prompt+=$'%{\033[48;5;'$1$'m%}'
 					_prompt+="${__next_character}"
-					_prompt+=$'%{\033[38;5;'$2$'m%}'
+					[ "$2" -ne -1 ] && _prompt+=$'%{\033[38;5;'$2$'m%}'
 				else
-					_prompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$1" -ne -1 ] && _prompt+=$'%{\033[48;5;'$1$'m%}'
 					if ! $__prompt_is_started; then
 						_prompt+=" "
 					fi
-					_prompt+=$'%{\033[38;5;'$2$'m%}'
+					[ "$2" -ne -1 ] && _prompt+=$'%{\033[38;5;'$2$'m%}'
 				fi
 				__next_character=''
 			else
-				_prompt+=$'%{\033[48;5;'$1$'m%}'
-				_prompt+=$'%{\033[38;5;'$2$'m%}'
+				[ "$1" -ne -1 ] && _prompt+=$'%{\033[48;5;'$1$'m%}'
+				[ "$2" -ne -1 ] && _prompt+=$'%{\033[38;5;'$2$'m%}'
 			fi
 			_prompt+="${@:3}"
 			_prompt+="${reset_color}"
-			_prompt+=$'%{\033[38;5;'$1$'m%}'
+			[ "$1" -ne -1 ] && _prompt+=$'%{\033[38;5;'$1$'m%}'
 			__prompt_is_started=true
 		elif [ -n "$1" ]; then
 			if $__prompt_is_started && [ -n "$__next_character" ]; then
@@ -589,27 +610,27 @@ __promptor_print_prompts() {
 		elif [ $# -gt 2 ]; then
 			 if [ -n "$__next_character" ]; then
 				if (( $__promptor_right_characters[(Ie)${__next_character}] )); then
-					_rprompt+=$'%{\033[38;5;'$1$'m%}'
+					[ "$1" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$1$'m%}'
 					_rprompt+="${__next_character}"
-					_rprompt+=$'%{\033[48;5;'$1$'m%}'
-					_rprompt+=$'%{\033[38;5;'$2$'m%}'
+					[ "$1" -ne -1 ] && _rprompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$2" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$2$'m%}'
 				elif (( $__promptor_left_characters[(Ie)${__next_character}] )); then
-					_rprompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$1" -ne -1 ] && _rprompt+=$'%{\033[48;5;'$1$'m%}'
 					_rprompt+="${__next_character}"
-					_rprompt+=$'%{\033[38;5;'$2$'m%}'
+					[ "$2" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$2$'m%}'
 				else
-					_rprompt+=$'%{\033[48;5;'$1$'m%}'
-					_rprompt+=$'%{\033[38;5;'$2$'m%}'
+					[ "$1" -ne -1 ] && _rprompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$2" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$2$'m%}'
 				fi
 				__next_character=''
 			else
-				_rprompt+=$'%{\033[48;5;'$1$'m%}'
-				_rprompt+=$'%{\033[38;5;'$2$'m%}'
+				[ "$1" -ne -1 ] && _rprompt+=$'%{\033[48;5;'$1$'m%}'
+				[ "$2" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$2$'m%}'
 			fi
 			last_fg_color="$1"
 			last_bg_color="$1"
 			_rprompt+="${@:3}"
-			_rprompt+=$'%{\033[38;5;'$1$'m%}'
+			[ "$1" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$1$'m%}'
 			__prompt_is_started=true
 		elif [ -n "$1" ]; then
 			_rprompt+="${reset_color}"
