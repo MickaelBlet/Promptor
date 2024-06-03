@@ -1,12 +1,11 @@
 # default configuration
 promptor_config[example.bg]=231
 promptor_config[example.fg]=232
-promptor_config[example.value]="foo bar"
+promptor_config[example.value]="foobar"
 
 # call by end of __my_example_slow_function (not required)
 __my_example_callback() {
-	local prompt="$1"
-	local answer="$2"
+	local answer="$1"
 	promptor_reload_prompt_from_function \
 		example_async \
 		"$answer"
@@ -14,7 +13,6 @@ __my_example_callback() {
 
 # slow example function
 __my_example_slow_function() {
-	local prompt="$1"
 	sleep 1
 	echo "${promptor_config[example.bg]}"    # BACKGROUND
 	echo "${promptor_config[example.fg]}"    # FOREGROUND
@@ -23,18 +21,13 @@ __my_example_slow_function() {
 
 # must be prefix by promptor_worker_
 promptor_worker_example_async() {
-	local prompt="$1"
-	promptor_launch_worker_job \
-		example_async \
-		"$prompt" \
-		__my_example_slow_function \
-		__my_example_callback
+	promptor_create_worker_callback example_async __my_example_callback
+	promptor_launch_worker_job example_async __my_example_slow_function "$@"
 }
 
 # execute before callback (not required)
 # must be prefix by promptor_function_
 promptor_function_example_async() {
-	local prompt="$1"
 	# the function must be print at least 3 arguments
 	echo "${promptor_config[example.bg]}"    # BACKGROUND
 	echo "${promptor_config[example.fg]}"    # FOREGROUND

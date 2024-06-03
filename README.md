@@ -1,6 +1,7 @@
 # Promptor
 
-Customize your zsh prompt with powerline or nerd font. 
+Customize your zsh prompt with powerline or nerd font.  
+Full examples at [examples.md](docs/examples.md).
 
 <p align="center">
   <img src="./images/promptor.drawio.png" >
@@ -35,19 +36,21 @@ source "$HOME/.zshrc.d/promptor/promptor.zsh"
     <img src="./images/colors.drawio.png" >
 </p>
 
-## Sections
+## Section
 
 Add section in **promptor_config::prompt** or **promptor_config::rprompt**.  
-The sections are separate by `[{unicode_gliph}]`
+The sections are separate by `[<glyph>]`, the **Glyph** can be set by `name` or `unicode` character.
 
-A **section** can be contain a [Function](#function) or 3 Arguments (`background`, `foreground`, `content`).
+A **section** can be contain a `{{`[Function](#function)`}}` or 3 Arguments (`background`, `foreground`, `content`).
 
 ### Examples:
+
+Full examples at [examples.md](docs/examples.md).
 
 #### Change colors of prompt
 
 ```bash
-promptor_config::prompt "[\ue0b6]248 232 %~ [\ue0b0] unwritten [\ue0b0] exit_code [\ue0b0]"
+promptor_config::prompt '[left_half_circle_thick]248 231 %~ [left_hard_divider] {{unwritten}} [left_hard_divider] {{exit_code}} [left_hard_divider]'
 ```
 
 <p align="center">
@@ -57,7 +60,7 @@ promptor_config::prompt "[\ue0b6]248 232 %~ [\ue0b0] unwritten [\ue0b0] exit_cod
 #### Bullet prompt
 
 ```bash
-promptor_config::prompt "[\ue0b6]237 231 %~[\ue0b4][\ue0b6]unwritten[\ue0b4][\ue0b6]exit_code[\ue0b4]"
+promptor_config::prompt '[\ue0b6]237 231 %~[\ue0b4][\ue0b6]{{unwritten}}[\ue0b4][\ue0b6]{{exit_code}}[\ue0b4]'
 ```
 
 <p align="center">
@@ -65,8 +68,8 @@ promptor_config::prompt "[\ue0b6]237 231 %~[\ue0b4][\ue0b6]unwritten[\ue0b4][\ue
 </p>
 
 ## Function
-Call functions in **promptor_config::prompt** and **promptor_config::rprompt** with `[{unicode_gliph}]{function_name}[{unicode_gliph}]`  
-The functions take a agrument "**prompt**" or "**rprompt**"
+Call functions in **promptor_config::prompt** and **promptor_config::rprompt** with `{{<function_name>}}`  
+Function can be take an arguments (`{{<function_name> <arguments...>}}`).
 
 ### Git
 With `git` or `git_async` functions you can show a color status.  
@@ -78,16 +81,15 @@ You can change or disable information piority sequence with: `promptor_config::g
 </p>
 
 ### Custion function
-~/.zshrc.d/promptor/promptor_functions/example
+~/.zshrc.d/promptor/functions/example
 ``` bash
 # default configuration
 promptor_config[example.bg]=231
 promptor_config[example.fg]=232
-promptor_config[example.value]="foo bar"
+promptor_config[example.value]="foobar"
 
 # must be prefix by promptor_function_
 promptor_function_example() {
-    local prompt="$1"
     # the function must be print at least 3 arguments
     echo "${promptor_config[example.bg]}"    # BACKGROUND
     echo "${promptor_config[example.fg]}"    # FOREGROUND
@@ -105,25 +107,21 @@ Create automaticaly the manage function configurations:
 </p>
 
 ### Custion async function
-~/.zshrc.d/promptor/promptor_functions/example_async
+~/.zshrc.d/promptor/functions/example_async
 ``` bash
 # default configuration
 promptor_config[example.bg]=231
 promptor_config[example.fg]=232
-promptor_config[example.value]="foo bar"
+promptor_config[example.value]="foobar"
 
 # call by end of __my_example_slow_function (not required)
 __my_example_callback() {
-    local prompt="$1"
-    local answer="$2"
-    promptor_reload_prompt_from_function \
-        example_async \
-        "$answer"
+    local answer="$1"
+    promptor_reload_prompt_from_function example_async "$answer"
 }
 
 # slow example function
 __my_example_slow_function() {
-    local prompt="$1"
     sleep 1
     echo "${promptor_config[example.bg]}"    # BACKGROUND
     echo "${promptor_config[example.fg]}"    # FOREGROUND
@@ -132,18 +130,13 @@ __my_example_slow_function() {
 
 # must be prefix by promptor_worker_
 promptor_worker_example_async() {
-    local prompt="$1"
-    promptor_launch_worker_job \
-        example_async \
-        "$prompt" \
-        __my_example_slow_function \
-        __my_example_callback
+    promptor_create_worker_callback example_async __my_example_callback
+    promptor_launch_worker_job example_async __my_example_slow_function "$@"
 }
 
 # execute before callback (not required)
 # must be prefix by promptor_function_
 promptor_function_example_async() {
-    local prompt="$1"
     # the function must be print at least 3 arguments
     echo "${promptor_config[example.bg]}"    # BACKGROUND
     echo "${promptor_config[example.fg]}"    # FOREGROUND
@@ -153,16 +146,19 @@ promptor_function_example_async() {
 
 ## Configuration
 
+You can edit the configuration file `~/.zshrc.d/promptor/promptor.conf`.  
+Use the `promptor_reload` function for take your change(s).
+
 Default configuration:
 ``` bash
 $ promptor_config_list
 example.bg                                = "231"
 example.fg                                = "232"
-example.value                             = "foo bar"
+example.value                             = "foobar"
 exit_code.bg                              = "125"
 exit_code.fg                              = "231"
 git                                       = "true"
-git.async.wait.bg                         = "234"
+git.async.wait.bg                         = "238"
 git.async.wait.character                  = "\uf250" ()
 git.async.wait.fg                         = "231"
 git.character.added                       = "A"
@@ -209,10 +205,9 @@ git.powerline.character.tag               = "\uf02b" ()
 git.powerline.character.untracked         = "U"
 git.powerline.character.upstream.left     = "\u2b63" (⭣)
 git.powerline.character.upstream.right    = "\u2b61" (⭡)
-git.show.upstream                         = "verbose"
 powerline                                 = "true"
-prompt                                    = "[\ue0b6]237 231 %~ [\ue0b0] unwritten [\ue0b0] exit_code [\ue0b0]" ([]237 231 %~ [] unwritten [] exit_code [])
-rprompt                                   = "[\ue0b2] git_async [\ue0b2] 25 231 %n@%m [\ue0b2] 237 231 %D{%H:%M}[\ue0b4]" ([] git_async [] 25 231 %n@%m [] 237 231 %D{%H:%M}[])
+prompt                                    = "[left_half_circle_thick]237 231 %~ [left_hard_divider] {{unwritten}} [left_hard_divider] {{exit_code}} [left_hard_divider]"
+rprompt                                   = "[right_hard_divider] {{git_async}} [right_hard_divider] 25 231 %n@%m [right_hard_divider] 237 231 %D{%H:%M}[right_half_circle_thick]"
 title                                     = "%n: %~"
 title.command.max_size                    = "100"
 unwritten.bg                              = "124"

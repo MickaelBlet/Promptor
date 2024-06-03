@@ -1,0 +1,7 @@
+promptor_function_echo() {
+	local bg="$1"
+	local fg="$2"
+	local content="$3"
+
+	echo "$bg" "$fg" "$content"
+}

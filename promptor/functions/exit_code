@@ -5,8 +5,8 @@ promptor_config[exit_code.fg]=231
 # must be prefix by promptor_function_
 promptor_function_exit_code() {
 	if [ "$__promptor_last_exit_code" -ne 0 ]; then
-		echo "${promptor_config[exit_code.bg]}"
-		echo "${promptor_config[exit_code.fg]}"
-		echo "$__promptor_last_exit_code"
+		echo "${promptor_config[exit_code.bg]}" \
+			"${promptor_config[exit_code.fg]}" \
+			"$__promptor_last_exit_code"
 	fi
 }

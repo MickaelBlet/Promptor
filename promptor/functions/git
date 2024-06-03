@@ -40,12 +40,6 @@ promptor_config[git.information.sequence]="dirty added untracked stash upstream"
 # - describe
 # - *
 promptor_config[git.describe.style]="tag"
-# show upstream options list:
-# - git | svn  choose your repo type
-# - verbose    show number up or down stream
-# - legacy     use legacy command
-# - name       show the name of bramch or commit
-promptor_config[git.show.upstream]="verbose"
 promptor_config[git.character.dirty]="M"
 promptor_config[git.character.added]="A"
 promptor_config[git.character.untracked]="U"
@@ -77,8 +71,6 @@ promptor_function_git() {
 	if [ "${promptor_config[git]}" = false ]; then
 		return
 	fi
-
-	local prompt_side="$1"
 
 	__promptor_function_git_command() {
 		GIT_OPTIONAL_LOCKS=0 command git "$@"
@@ -293,7 +285,7 @@ promptor_function_git() {
 	local character_separator_prompt="${promptor_config[git.${powerline}character.separator.prompt]}"
 	local character_separator_rprompt="${promptor_config[git.${powerline}character.separator.rprompt]}"
 
-	if [ "$prompt_side" = "rprompt" ]; then
+	if [ "${__promptor_prompt:-}" = "rprompt" ]; then
 		character_separator_prompt="$character_separator_rprompt"
 	fi
 

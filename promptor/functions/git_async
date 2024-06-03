@@ -8,17 +8,14 @@ __promptor_old_git_prompt=""
 
 # must be prefix by promptor_worker_
 promptor_worker_git_async() {
-	promptor_launch_worker_job \
-		git_async \
-		"$1" \
-		__promptor_function_git \
-		__promptor_worker_git_async_callback
+	promptor_create_worker_callback git_async __promptor_worker_git_async_callback
+	promptor_launch_worker_job git_async __promptor_function_git "$@"
 }
 
 # call by end of __promptor_function_git
 __promptor_worker_git_async_callback() {
-	__promptor_old_git_prompt="$2"
-	promptor_reload_prompt_from_function git_async "$2"
+	__promptor_old_git_prompt="$1"
+	promptor_reload_prompt_from_function git_async "$1"
 }
 
 # must be prefix by promptor_function_
@@ -26,8 +23,8 @@ promptor_function_git_async() {
 	# remove colors
 	local old_git_prompt="${__promptor_old_git_prompt#* * }"
 	if [ -n "$old_git_prompt" ]; then
-		echo -en "${promptor_config[git.async.wait.bg]}" \
-				 "${promptor_config[git.async.wait.fg]}" \
-				 "${old_git_prompt:0:-1}${promptor_config[git.async.wait.character]}" 2> /dev/null
+		echo -e "${promptor_config[git.async.wait.bg]}" \
+				"${promptor_config[git.async.wait.fg]}" \
+				"${old_git_prompt:0:-1}${promptor_config[git.async.wait.character]}" 2> /dev/null
 	fi
 }

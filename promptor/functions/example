@@ -1,11 +1,10 @@
 # default configuration
 promptor_config[example.bg]=231
 promptor_config[example.fg]=232
-promptor_config[example.value]="foo bar"
+promptor_config[example.value]="foobar"
 
 # must be prefix by promptor_function_
 promptor_function_example() {
-	local prompt="$1"
 	# the function must be print at least 3 arguments
 	echo "${promptor_config[example.bg]}"    # BACKGROUND
 	echo "${promptor_config[example.fg]}"    # FOREGROUND
