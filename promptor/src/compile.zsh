@@ -143,11 +143,11 @@ __promptor_precompile_prompts() {
 						builtin set -- '$bg' '$fg' $'$prefix$args'
 					")
 				fi
-			elif [[ "$prompt_step" =~ '^\s*\{\{[_[:alnum:]]+.*\}\}\s*$' ]]; then
+			elif [[ "$prompt_step" =~ '^\s*\{\{\s*[_[:alnum:]]+.*\}\}\s*$' ]]; then
 				prefix="${prompt_step%%\{\{*}"
 				suffix="${prompt_step:$((${#prefix}+2))}"
-				function_args="${suffix%%[[:blank:]]*}"
-				function_args="${suffix%%\}\}*}"
+				function_args="${suffix%%[_[:alnum:]]*}"
+				function_args="${${suffix:${#function_args}}%%\}\}*}"
 				function_name="${function_args%%[[:blank:]]*}"
 				suffix="${suffix##*\}\}}"
 				# check if worker exists
@@ -195,6 +195,7 @@ __promptor_precompile_prompts() {
 				fi
 			elif [[ "$prompt_step" =~ '^\[.*\]$' ]]; then
 				glyph_name="${prompt_step:1:-1}"
+				glyph_name="${glyph_name//[[:blank:]]}"
 				if [ "${__promptor_glyph[$glyph_name]+abracadabra}" ]; then
 					prompt_step="[\u${__promptor_glyph[$glyph_name]}]"
 				fi
