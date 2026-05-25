@@ -6,6 +6,13 @@ promptor_config[git.async.wait.character]="\uf250"
 # last git async result
 __promptor_old_git_prompt=""
 
+# reset cached prompt on PWD change so the placeholder does not show
+# stale git info from the previous directory while async is running
+__promptor_git_async_chpwd() {
+	__promptor_old_git_prompt=""
+}
+add-zsh-hook chpwd __promptor_git_async_chpwd
+
 # must be prefix by promptor_worker_
 promptor_worker_git_async() {
 	promptor_create_worker_callback git_async __promptor_worker_git_async_callback

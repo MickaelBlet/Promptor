@@ -36,12 +36,20 @@ promptor_create_worker_callback() {
 		"
 	fi
 
-	# create function of worker
+	# create function of worker (filter out async internal errors like '[async]')
 	builtin eval "
 		__promptor_worker_${function_name}_callback_${__promptor_prompt}() {
+			[[ \"\$1\" == '[async]' ]] && return
 			${callback} \"\$3\"
 		}
 	"
+}
+
+# wrapper run inside the worker: sync PWD then invoke the real function
+__promptor_async_run() {
+	builtin cd -q -- "$1" 2> /dev/null
+	shift
+	"$@"
 }
 
 promptor_launch_worker_job() {
@@ -50,20 +58,24 @@ promptor_launch_worker_job() {
 
 	builtin local worker_name="__promptor_worker_${function_name}_${__promptor_prompt}"
 
-	async_stop_worker "$worker_name" 2> /dev/null
-	async_start_worker "$worker_name" -n
+	# start worker once (idempotent), -u skips queued duplicates while one is running
+	async_start_worker "$worker_name" -n -u
 	async_register_callback "$worker_name" "__promptor_worker_${function_name}_callback_${__promptor_prompt}"
-	async_job "$worker_name" "$function_job" "${@:3}"
+	# pass current PWD so the worker chdir before calling the function
+	async_job "$worker_name" __promptor_async_run "$PWD" "$function_job" "${@:3}"
 }
 
 promptor_reload_prompt_from_function() {
 	builtin local function_name="$1"
-	builtin local function_answer="$2"
 
-	# create temporary replace function
+	# store answer in global to avoid eval injection with special characters
+	builtin typeset -g "__promptor_reload_cache_${function_name}"
+	builtin eval "__promptor_reload_cache_${function_name}=\$2"
+
+	# create temporary replace function referencing the global cache
 	builtin eval "
-		__promptor_function_$function_name() {
-			echo \"$function_answer\"
+		__promptor_function_${function_name}() {
+			echo \"\${__promptor_reload_cache_${function_name}}\"
 		}
 	"
 

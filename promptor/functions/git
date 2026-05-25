@@ -120,11 +120,13 @@ promptor_function_git() {
 		typeset -i fd_count_stash=-1
 		typeset -i fd_count_untracked=-1
 		typeset -i fd_count_upstream=-1
+		typeset -i fd_count_conflict=-1
 		exec {fd_count_dirty}< <(__promptor_function_git_command diff --name-only --no-ext-diff 2> /dev/null | wc -l )
 		exec {fd_count_added}< <(__promptor_function_git_command diff --name-only --no-ext-diff --cached 2> /dev/null | wc -l)
-		exec {fd_count_stash}< <(__promptor_function_git_command rev-list --walk-reflogs --count refs/stash 2> /dev/null || echo 0)
+		exec {fd_count_stash}< <([ -f "$rev_parse_git_dir/logs/refs/stash" ] && wc -l < "$rev_parse_git_dir/logs/refs/stash" || echo 0)
 		exec {fd_count_untracked}< <(__promptor_function_git_command ls-files --others --exclude-standard --directory --no-empty-directory --error-unmatch -- ':/*' 2>/dev/null | wc -l)
 		exec {fd_count_upstream}< <(__promptor_function_git_command rev-list --count --left-right "@{upstream}...HEAD" 2>/dev/null)
+		exec {fd_count_conflict}< <(__promptor_function_git_command ls-files --unmerged 2>/dev/null | wc -l)
 	fi
 
 	__promptor_function_git_dir_read() {
@@ -146,7 +148,6 @@ promptor_function_git() {
 	local rebase_total=""
 	local rebase_action=""
 	local sequencer_todo=""
-	local branch=""
 
 	if [ -d "$rev_parse_git_dir/rebase-merge" ]; then
 		__promptor_function_git_dir_read "rebase-merge/head-name" branch
@@ -196,6 +197,7 @@ promptor_function_git() {
 						exec {fd_count_stash}<&-
 						exec {fd_count_untracked}<&-
 						exec {fd_count_upstream}<&-
+						exec {fd_count_conflict}<&-
 						return
 					fi
 					if [[ "$head" == "ref: "* ]]; then
@@ -242,10 +244,6 @@ promptor_function_git() {
 	fi
 
 	local conflict=false
-	if [ -n "$(__promptor_function_git_command ls-files --unmerged 2>/dev/null)" ]; then
-		conflict=true
-	fi
-
 	local count_dirty=0
 	local count_added=0
 	local count_stash=0
@@ -260,13 +258,17 @@ promptor_function_git() {
 		builtin read -ru $fd_count_stash count_stash
 		builtin read -ru $fd_count_untracked count_untracked
 		builtin read -ru $fd_count_upstream count_upstream
+		local count_conflict=0
+		builtin read -ru $fd_count_conflict count_conflict
 		exec {fd_count_dirty}<&-
 		exec {fd_count_added}<&-
 		exec {fd_count_stash}<&-
 		exec {fd_count_untracked}<&-
 		exec {fd_count_upstream}<&-
+		exec {fd_count_conflict}<&-
 		count_upstream_left="${count_upstream%	*}"
 		count_upstream_right="${count_upstream#*	}"
+		[ "${count_conflict:-0}" -gt 0 ] && conflict=true
 	fi
 
 	local powerline=""
@@ -277,7 +279,6 @@ promptor_function_git() {
 	local character_stash="${promptor_config[git.${powerline}character.stash]}"
 	local character_upstream_left="${promptor_config[git.${powerline}character.upstream.left]}"
 	local character_upstream_right="${promptor_config[git.${powerline}character.upstream.right]}"
-	local character_stash="${promptor_config[git.${powerline}character.stash]}"
 	local character_branch="${promptor_config[git.${powerline}character.branch]}"
 	local character_tag="${promptor_config[git.${powerline}character.tag]}"
 	local character_hash="${promptor_config[git.${powerline}character.hash]}"
