@@ -86,13 +86,23 @@ promptor_reload_prompt_from_function() {
 	zle && zle ".reset-prompt"
 }
 
+# cache of __promptor_function_*_default names (populated once after functions load)
+builtin typeset -ga __promptor_default_functions
+__promptor_default_functions=()
+__promptor_cache_default_functions() {
+	__promptor_default_functions=("${(@f)$(builtin typeset +mf '__promptor_function_*_default')}")
+	# strip empty entry when no matches
+	[ ${#__promptor_default_functions[@]} -eq 1 ] && [ -z "${__promptor_default_functions[1]}" ] \
+		&& __promptor_default_functions=()
+}
+
 __promptor_launch_workers() {
 	builtin typeset -g __promptor_prompt_workers
 	builtin typeset -g __promptor_rprompt_workers
 
 	builtin local function_name
 	builtin local function_content
-	for function_name in $(builtin typeset +mf "__promptor_function_*_default"); do
+	for function_name in "${__promptor_default_functions[@]}"; do
 		# replace by default function
 		if is-at-least 5.8; then
 			functions -c "$function_name" "${function_name%_default}"

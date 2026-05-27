@@ -30,6 +30,8 @@ __promptor_precompile_prompts() {
 	builtin typeset -g __promptor_rprompt_workers
 	builtin typeset -g __promptor_right_characters
 	builtin typeset -g __promptor_left_characters
+	builtin typeset -gA __promptor_right_char_set
+	builtin typeset -gA __promptor_left_char_set
 
 	if [ "${promptor_config[powerline]}" = true ]; then
 		__promptor_right_characters=(
@@ -76,6 +78,17 @@ __promptor_precompile_prompts() {
 		__promptor_left_characters=()
 	fi
 
+	# precompute hash sets for O(1) membership tests in the print loop
+	__promptor_right_char_set=()
+	__promptor_left_char_set=()
+	builtin local _c
+	for _c in "${__promptor_right_characters[@]}"; do
+		__promptor_right_char_set[$_c]=1
+	done
+	for _c in "${__promptor_left_characters[@]}"; do
+		__promptor_left_char_set[$_c]=1
+	done
+
 	__promptor_prompt_actions=()
 	__promptor_rprompt_actions=()
 	__promptor_prompt_workers=()
@@ -84,33 +97,27 @@ __promptor_precompile_prompts() {
 	__promptor_split_prompt() {
 		builtin local array_name="$1"
 		builtin local prompt="$2"
-		builtin local left
-		builtin local right
-		builtin local in_bracket
-		builtin local ret_array
+		builtin local before after in_bracket
+		builtin local -a ret_array
 		builtin local i=0
 		ret_array=()
-		while [[ "$prompt" =~ '\[' ]]; do
-			right="${prompt##*\[}"
-			left="${prompt%\[*}"
-			if [ -n "$right" ]; then
-				in_bracket="[${right%\]*}]"
-				right="${right#*\]}"
-				if [ -n "$right" ]; then
-					ret_array=("${right}" "${ret_array[@]}")
-				fi
-				ret_array=("${in_bracket}" "${ret_array[@]}")
+		while [[ "$prompt" == *'['* ]]; do
+			before="${prompt%%\[*}"
+			after="${prompt#*\[}"
+			if [[ "$after" == *']'* ]]; then
+				in_bracket="[${after%%\]*}]"
+				after="${after#*\]}"
+			else
+				# unclosed bracket: synthesize close to keep legacy parse behavior
+				in_bracket="[$after]"
 			fi
-			prompt="${left}"
-			i=$((i + 1))
-			if [ $i -gt 255 ]; then
-				break
-			fi
+			[ -n "$before" ] && ret_array+=("$before")
+			ret_array+=("$in_bracket")
+			prompt="$after"
+			(( ++i > 255 )) && break
 		done
-		if [ -n "$prompt" ]; then
-			ret_array=("${prompt}" "${ret_array[@]}")
-		fi
-		eval $array_name'=("$ret_array[@]")'
+		[ -n "$prompt" ] && ret_array+=("$prompt")
+		eval $array_name'=("${ret_array[@]}")'
 	}
 
 	__promptor_parse_prompt() {
@@ -135,11 +142,11 @@ __promptor_precompile_prompts() {
 				prompt_step="${prompt_step#*[[:blank:]]}"
 				args="${prompt_step}"
 				if [ "$prompt_name" = "prompt" ]; then
-					__promptor_prompt_actions=($__promptor_prompt_actions "
+					__promptor_prompt_actions+=("
 						builtin set -- '$bg' '$fg' $'$prefix$args'
 					")
 				else
-					__promptor_rprompt_actions=($__promptor_rprompt_actions "
+					__promptor_rprompt_actions+=("
 						builtin set -- '$bg' '$fg' $'$prefix$args'
 					")
 				fi
@@ -154,41 +161,41 @@ __promptor_precompile_prompts() {
 				if builtin typeset -f "__promptor_worker_$function_name" > /dev/null; then
 					# prepare to launch worker with prompt argument
 					if [ "$prompt_name" = "prompt" ]; then
-						__promptor_prompt_workers=($__promptor_prompt_workers "__promptor_worker_$function_args")
+						__promptor_prompt_workers+=("__promptor_worker_$function_args")
 					else
-						__promptor_rprompt_workers=($__promptor_rprompt_workers "__promptor_worker_$function_args")
+						__promptor_rprompt_workers+=("__promptor_worker_$function_args")
 					fi
 				fi
 				# check if function exist
 				if builtin typeset -f "__promptor_function_$function_name" > /dev/null; then
 					if [ "$prompt_name" = "prompt" ]; then
-						__promptor_prompt_actions=($__promptor_prompt_actions "
+						__promptor_prompt_actions+=("
 							builtin set -- \$(__promptor_function_$function_args)
 							[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
 						")
 					else
-						__promptor_rprompt_actions=($__promptor_rprompt_actions "
+						__promptor_rprompt_actions+=("
 							builtin set -- \$(__promptor_function_$function_args)
 							[ \$# -gt 2 ] && builtin set -- \"\$1\" \"\$2\" \"$prefix\${@:3}$suffix\"
 						")
 					fi
 				elif builtin typeset -f "$function_name" > /dev/null || builtin command -v "$function_name" > /dev/null; then
 					if [ "$prompt_name" = "prompt" ]; then
-						__promptor_prompt_actions=($__promptor_prompt_actions "
+						__promptor_prompt_actions+=("
 							builtin set -- \"$prefix\$($function_args)$suffix\"
 						")
 					else
-						__promptor_rprompt_actions=($__promptor_rprompt_actions "
+						__promptor_rprompt_actions+=("
 							builtin set -- \"$prefix\$($function_args)$suffix\"
 						")
 					fi
 				else
 					if [ "$prompt_name" = "prompt" ]; then
-						__promptor_prompt_actions=($__promptor_prompt_actions "
+						__promptor_prompt_actions+=("
 							builtin set -- $'${prompt_step}'
 						")
 					else
-						__promptor_rprompt_actions=($__promptor_rprompt_actions "
+						__promptor_rprompt_actions+=("
 							builtin set -- $'${prompt_step}'
 						")
 					fi
@@ -200,21 +207,21 @@ __promptor_precompile_prompts() {
 					prompt_step="[\u${__promptor_glyph[$glyph_name]}]"
 				fi
 				if [ "$prompt_name" = "prompt" ]; then
-					__promptor_prompt_actions=($__promptor_prompt_actions "
+					__promptor_prompt_actions+=("
 						builtin set -- $'${prompt_step}'
 					")
 				else
-					__promptor_rprompt_actions=($__promptor_rprompt_actions "
+					__promptor_rprompt_actions+=("
 						builtin set -- $'${prompt_step}'
 					")
 				fi
 			else
 				if [ "$prompt_name" = "prompt" ]; then
-					__promptor_prompt_actions=($__promptor_prompt_actions "
+					__promptor_prompt_actions+=("
 						builtin set -- $'${prompt_step}'
 					")
 				else
-					__promptor_rprompt_actions=($__promptor_rprompt_actions "
+					__promptor_rprompt_actions+=("
 						builtin set -- $'${prompt_step}'
 					")
 				fi

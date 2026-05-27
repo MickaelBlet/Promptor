@@ -4,7 +4,7 @@ promptor_config[unwritten.fg]=231
 
 # must be prefix by promptor_function_
 promptor_function_unwritten() {
-	if [ ! -w "$(pwd)" ]; then
+	if [ ! -w "$PWD" ]; then
 		# font character
 		local character_lock
 		if [ "${promptor_config[powerline]}" = true ]; then

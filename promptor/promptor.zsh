@@ -94,6 +94,7 @@ fi
 
 __promptor_bind_widgets
 __promptor_load_functions
+__promptor_cache_default_functions
 __promptor_load_config_file
 __promptor_create_config_functions
 __promptor_update_config_file

@@ -31,8 +31,8 @@ __promptor_print_title() {
 __promptor_print_prompts() {
 	builtin typeset -g __promptor_prompt_actions
 	builtin typeset -g __promptor_rprompt_actions
-	builtin typeset -g __promptor_right_characters
-	builtin typeset -g __promptor_left_characters
+	builtin typeset -gA __promptor_right_char_set
+	builtin typeset -gA __promptor_left_char_set
 
 	builtin local reset_color=$'%{\033[0m%}'
 	builtin local _prompt
@@ -56,10 +56,9 @@ __promptor_print_prompts() {
 			continue
 		elif [ $# -eq 1 ] && [[ "$1" =~ '^\[.*\]$' ]]; then
 			if $__prompt_is_started && [ -n "$__next_character" ]; then
-				if (( $__promptor_right_characters[(Ie)${__next_character}] )) && \
-					! (( $__promptor_right_characters[(Ie)${1:1:-1}] )); then
-					_prompt+="${__next_character}"
-					_prompt+="${reset_color}"
+				if (( ${+__promptor_right_char_set[$__next_character]} )) && \
+					(( ! ${+__promptor_right_char_set[${1:1:-1}]} )); then
+					_prompt+="${__next_character}${reset_color}"
 					__prompt_is_started=false
 					__next_character=""
 				fi
@@ -67,18 +66,17 @@ __promptor_print_prompts() {
 			if [ "${1:1:-1}" = $'\n' ]; then
 				__next_character=""
 				_prompt+=$'\n'
-			elif [ -z "$__next_character" ] && ; then
-				__next_character="$1"
-				__next_character="${__next_character:1:-1}"
+			elif [ -z "$__next_character" ]; then
+				__next_character="${1:1:-1}"
 			fi
 		elif [ $# -gt 2 ]; then
 			if [ -n "$__next_character" ]; then
-				if (( $__promptor_left_characters[(Ie)${__next_character}] )); then
+				if (( ${+__promptor_left_char_set[$__next_character]} )); then
 					[ "$1" -ne -1 ] && _prompt+=$'%{\033[38;5;'$1$'m%}'
 					_prompt+="${__next_character}"
-					[ "$1" -ne -1 ] &&_prompt+=$'%{\033[48;5;'$1$'m%}'
-					[ "$2" -ne -1 ] &&_prompt+=$'%{\033[38;5;'$2$'m%}'
-				elif (( $__promptor_right_characters[(Ie)${__next_character}] )); then
+					[ "$1" -ne -1 ] && _prompt+=$'%{\033[48;5;'$1$'m%}'
+					[ "$2" -ne -1 ] && _prompt+=$'%{\033[38;5;'$2$'m%}'
+				elif (( ${+__promptor_right_char_set[$__next_character]} )); then
 					[ "$1" -ne -1 ] && _prompt+=$'%{\033[48;5;'$1$'m%}'
 					_prompt+="${__next_character}"
 					[ "$2" -ne -1 ] && _prompt+=$'%{\033[38;5;'$2$'m%}'
@@ -91,8 +89,7 @@ __promptor_print_prompts() {
 				[ "$1" -ne -1 ] && _prompt+=$'%{\033[48;5;'$1$'m%}'
 				[ "$2" -ne -1 ] && _prompt+=$'%{\033[38;5;'$2$'m%}'
 			fi
-			_prompt+="${@:3}"
-			_prompt+="${reset_color}"
+			_prompt+="${@:3}${reset_color}"
 			[ "$1" -ne -1 ] && _prompt+=$'%{\033[38;5;'$1$'m%}'
 			__prompt_is_started=true
 		elif [ -n "$1" ]; then
@@ -100,8 +97,7 @@ __promptor_print_prompts() {
 				_prompt+="${__next_character}"
 				__next_character=''
 			fi
-			_prompt+="${reset_color}"
-			_prompt+="$@"
+			_prompt+="${reset_color}$@"
 			__prompt_is_started=false
 		else
 			_prompt+="${reset_color}"
@@ -109,9 +105,8 @@ __promptor_print_prompts() {
 		fi
 	done
 	if $__prompt_is_started && [ -n "$__next_character" ]; then
-		if (( $__promptor_left_characters[(Ie)${__next_character}] )); then
-			_prompt+="${__next_character}"
-		elif (( $__promptor_right_characters[(Ie)${__next_character}] )); then
+		if (( ${+__promptor_left_char_set[$__next_character]} )) || \
+			(( ${+__promptor_right_char_set[$__next_character]} )); then
 			_prompt+="${__next_character}"
 		fi
 		__next_character=''
@@ -138,27 +133,25 @@ __promptor_print_prompts() {
 				continue
 			elif [ $# -eq 1 ] && [[ "$1" =~ '^\[.*\]$' ]]; then
 				if $__prompt_is_started && [ -n "$__next_character" ]; then
-					if (( $__promptor_left_characters[(Ie)${__next_character}] )); then
-						_rprompt+="${__next_character}"
-						_rprompt+="${reset_color}"
+					if (( ${+__promptor_left_char_set[$__next_character]} )); then
+						_rprompt+="${__next_character}${reset_color}"
 						__prompt_is_started=false
-					elif (( $__promptor_right_characters[(Ie)${__next_character}] )); then
+					elif (( ${+__promptor_right_char_set[$__next_character]} )); then
 						_rprompt+="${reset_color}"
 						_rprompt+=$'%{\033[38;5;'$last_bg_color$'m%}'
 						_rprompt+="${__next_character}"
 						__prompt_is_started=false
 					fi
 				fi
-				__next_character="$1"
-				__next_character="${__next_character:1:-1}"
+				__next_character="${1:1:-1}"
 			elif [ $# -gt 2 ]; then
 				if [ -n "$__next_character" ]; then
-					if (( $__promptor_left_characters[(Ie)${__next_character}] )); then
+					if (( ${+__promptor_left_char_set[$__next_character]} )); then
 						[ "$1" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$1$'m%}'
 						_rprompt+="${__next_character}"
 						[ "$1" -ne -1 ] && _rprompt+=$'%{\033[48;5;'$1$'m%}'
 						[ "$2" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$2$'m%}'
-					elif (( $__promptor_right_characters[(Ie)${__next_character}] )); then
+					elif (( ${+__promptor_right_char_set[$__next_character]} )); then
 						[ "$1" -ne -1 ] && _rprompt+=$'%{\033[48;5;'$1$'m%}'
 						_rprompt+="${__next_character}"
 						[ "$2" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$2$'m%}'
@@ -177,19 +170,15 @@ __promptor_print_prompts() {
 				[ "$1" -ne -1 ] && _rprompt+=$'%{\033[38;5;'$1$'m%}'
 				__prompt_is_started=true
 			elif [ -n "$1" ]; then
-				_rprompt+="${reset_color}"
-				_rprompt+="$@"
+				_rprompt+="${reset_color}$@"
 				__prompt_is_started=true
 			else
 				_rprompt+="${reset_color}"
 				__prompt_is_started=false
 			fi
 		done
-		if (( $__promptor_left_characters[(Ie)${__next_character}] )); then
-			_rprompt+="${reset_color}"
-			_rprompt+=$'%{\033[38;5;'$last_fg_color$'m%}'
-			_rprompt+="${__next_character}"
-		elif (( $__promptor_right_characters[(Ie)${__next_character}] )); then
+		if (( ${+__promptor_left_char_set[$__next_character]} )) || \
+			(( ${+__promptor_right_char_set[$__next_character]} )); then
 			_rprompt+="${reset_color}"
 			_rprompt+=$'%{\033[38;5;'$last_fg_color$'m%}'
 			_rprompt+="${__next_character}"
