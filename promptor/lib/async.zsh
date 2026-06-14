@@ -31,33 +31,33 @@ _async_job() {
 	# Store start time for job.
 	float -F duration=$EPOCHREALTIME
 
-	# Run the command and capture both stdout (`eval`) and stderr (`cat`) in
-	# separate subshells. When the command is complete, we grab write lock
-	# (mutex token) and output everything except stderr inside the command
-	# block, after the command block has completed, the stdin for `cat` is
-	# closed, causing stderr to be appended with a $'\0' at the end to mark the
-	# end of output from this job.
-	local jobname=${ASYNC_JOB_NAME:-$1} out
-	out="$(
-		local stdout stderr ret tok
-		{
-			stdout=$(eval "$@")
-			ret=$?
-			duration=$(( EPOCHREALTIME - duration ))  # Calculate duration.
+	# Capture stdout (`eval`) directly and stderr through a temporary file,
+	# then emit the whole NUL-framed record from a single `print`. Previously
+	# stderr was captured with a `2> >(...)` process substitution that also
+	# wrote the closing $'\0' terminator; command substitution does not wait
+	# for process substitutions to finish, so on fast jobs the terminator could
+	# be missing, the record failed the `$'\0'*$'\0'` frame check, was silently
+	# skipped, and the callback never received the result. Single-writer framing
+	# removes that race entirely.
+	local jobname=${ASYNC_JOB_NAME:-$1}
+	local stdout stderr ret tok stderr_file
 
-			print -r -n - $'\0'${(q)jobname} $ret ${(q)stdout} $duration
-		} 2> >(stderr=$(command -p cat) && print -r -n - " "${(q)stderr}$'\0')
-	)"
-	if [[ $out != $'\0'*$'\0' ]]; then
-		# Corrupted output (aborted job?), skipping.
-		return
-	fi
+	stderr_file=$(command -p mktemp 2>/dev/null) ||
+		stderr_file="${TMPDIR:-/tmp}/async-$$-$RANDOM"
+	{
+		stdout=$(eval "$@" 2>"$stderr_file")
+		ret=$?
+		duration=$(( EPOCHREALTIME - duration ))  # Calculate duration.
+		stderr=$(<"$stderr_file")
+	} always {
+		command -p rm -f "$stderr_file"
+	}
 
 	# Grab mutex lock, stalls until token is available.
 	read -r -k 1 -p tok || return 1
 
 	# Return output (<job_name> <return_code> <stdout> <duration> <stderr>).
-	print -r -n - "$out"
+	print -r -n - $'\0'${(q)jobname} $ret ${(q)stdout} $duration ${(q)stderr}$'\0'
 
 	# Unlock mutex by inserting a token.
 	print -n -p $tok

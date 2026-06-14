@@ -251,6 +251,7 @@ promptor_function_git() {
 	local count_upstream=""
 	local count_upstream_left=0
 	local count_upstream_right=0
+	local count_conflict=0
 
 	if [ "$rev_parse_is_inside_work_tree" = true ]; then
 		builtin read -ru $fd_count_dirty count_dirty
@@ -258,7 +259,6 @@ promptor_function_git() {
 		builtin read -ru $fd_count_stash count_stash
 		builtin read -ru $fd_count_untracked count_untracked
 		builtin read -ru $fd_count_upstream count_upstream
-		local count_conflict=0
 		builtin read -ru $fd_count_conflict count_conflict
 		exec {fd_count_dirty}<&-
 		exec {fd_count_added}<&-
@@ -421,4 +421,6 @@ promptor_function_git() {
 	done
 
 	echo "${color_git_bg}" "${color_git_fg}" "${git_string}"
+
+	sleep 0 # give time to zle to process the new prompt
 }
