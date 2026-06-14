@@ -59,6 +59,9 @@ promptor_launch_worker_job() {
 	builtin local worker_name="__promptor_worker_${function_name}_${__promptor_prompt}"
 
 	# start worker once (idempotent), -u skips queued duplicates while one is running
+	if ! is-at-least 5.8; then
+		async_stop_worker "$worker_name" 2> /dev/null
+	fi
 	async_start_worker "$worker_name" -n -u
 	async_register_callback "$worker_name" "__promptor_worker_${function_name}_callback_${__promptor_prompt}"
 	# pass current PWD so the worker chdir before calling the function

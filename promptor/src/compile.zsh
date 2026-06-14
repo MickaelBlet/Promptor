@@ -24,6 +24,14 @@
 #
 
 __promptor_precompile_prompts() {
+	# powerline/nerd glyphs are expressed as \uXXXX escapes; a non UTF-8 ctype
+	# makes zsh reject them ("character not in range"). Force a UTF-8 ctype
+	# locally so escape expansion works regardless of the user's locale.
+	builtin local LC_ALL LC_CTYPE
+	if [[ "${LC_ALL:-${LC_CTYPE:-$LANG}}" != *[Uu][Tt][Ff]* ]]; then
+		LC_ALL=''
+		LC_CTYPE=C.UTF-8
+	fi
 	builtin typeset -g __promptor_prompt_actions
 	builtin typeset -g __promptor_rprompt_actions
 	builtin typeset -g __promptor_prompt_workers

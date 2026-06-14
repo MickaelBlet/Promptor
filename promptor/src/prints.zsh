@@ -29,6 +29,13 @@ __promptor_print_title() {
 }
 
 __promptor_print_prompts() {
+	# glyph actions embed \uXXXX escapes; force a UTF-8 ctype locally so a non
+	# UTF-8 locale does not trigger "character not in range" on expansion.
+	builtin local LC_ALL LC_CTYPE
+	if [[ "${LC_ALL:-${LC_CTYPE:-$LANG}}" != *[Uu][Tt][Ff]* ]]; then
+		LC_ALL=''
+		LC_CTYPE=C.UTF-8
+	fi
 	builtin typeset -g __promptor_prompt_actions
 	builtin typeset -g __promptor_rprompt_actions
 	builtin typeset -gA __promptor_right_char_set
