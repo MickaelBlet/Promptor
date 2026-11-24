@@ -93,7 +93,14 @@ __promptor_update_config_file() {
 			content+="$key='${promptor_config[${key}]//\\/\\\\}'\n"
 		fi
 	done
-	builtin echo -e "$content" > "$__PROMPTOR_CONFIG_PATH"
+	content="$(builtin echo -e "$content")"
+	# skip write when unchanged (avoids races between parallel shells)
+	if [[ -f "$__PROMPTOR_CONFIG_PATH" ]] && [[ "$(<"$__PROMPTOR_CONFIG_PATH")" == "$content" ]]; then
+		return 0
+	fi
+	# atomic write: readers never see a truncated/partial file
+	builtin local tmp="${__PROMPTOR_CONFIG_PATH}.tmp.$$"
+	builtin print -r -- "$content" >| "$tmp" && "mv" -f "$tmp" "$__PROMPTOR_CONFIG_PATH" || "rm" -f "$tmp"
 }
 
 __promptor_create_config_functions() {
